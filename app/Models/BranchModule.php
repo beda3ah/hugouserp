@@ -1,0 +1,76 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\Pivot;
+
+class BranchModule extends Pivot
+{
+    use HasFactory;
+
+    protected $table = 'branch_modules';
+
+    /**
+     * Pivot between branches and modules.
+     *
+     * Columns are designed to be flexible:
+     * - branch_id   : int
+     * - module_id   : int|null (FK to modules table)
+     * - module_key  : string (stable key, e.g. "inventory")
+     * - enabled     : bool
+     * - settings    : json
+     */
+    protected $fillable = [
+        'branch_id',
+        'module_id',
+        'module_key',
+        'enabled',
+        'settings',
+    ];
+
+    protected $casts = [
+        'enabled'  => 'bool',
+        'settings' => 'array',
+    ];
+
+    public $timestamps = true;
+
+    /** Relationships */
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function module(): BelongsTo
+    {
+        return $this->belongsTo(Module::class);
+    }
+
+    /** Accessors / Mutators for backwards compatibility */
+
+    public function getIsEnabledAttribute(): bool
+    {
+        return (bool) ($this->attributes['enabled'] ?? false);
+    }
+
+    public function setIsEnabledAttribute($value): void
+    {
+        $this->attributes['enabled'] = (bool) $value;
+    }
+
+    public function getModuleKeyAttribute(): ?string
+    {
+        if (array_key_exists('module_key', $this->attributes) && $this->attributes['module_key']) {
+            return $this->attributes['module_key'];
+        }
+
+        return $this->relationLoaded('module') && $this->module
+            ? $this->module->key
+            : null;
+    }
+}

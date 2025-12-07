@@ -1,0 +1,70 @@
+<div class="max-w-2xl mx-auto space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">{{ $editMode ? __('Edit Income') : __('Add Income') }}</h1>
+        </div>
+        <a href="{{ route('income.index') }}" class="erp-btn erp-btn-secondary">{{ __('Back') }}</a>
+    </div>
+
+    <form wire:submit="save" class="erp-card p-6 space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <div class="flex items-center justify-between">
+                    <label class="erp-label">{{ __('Category') }}</label>
+                    <x-quick-add-link 
+                        route="admin.income-categories.index" 
+                        label="{{ __('Add Category') }}"
+                        tooltip="{{ __('Create new income category') }}" />
+                </div>
+                <select wire:model="category_id" class="erp-input">
+                    <option value="">{{ __('Select Category') }}</option>
+                    @foreach($categories as $category)
+                        <option value="{{ $category->id }}">{{ $category->localized_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="erp-label">{{ __('Date') }} <span class="text-red-500">*</span></label>
+                <input type="date" wire:model="income_date" class="erp-input @error('income_date') border-red-500 @enderror">
+                @error('income_date') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
+                <label class="erp-label">{{ __('Amount') }} <span class="text-red-500">*</span></label>
+                <input type="number" wire:model="amount" step="0.01" class="erp-input @error('amount') border-red-500 @enderror">
+                @error('amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+            </div>
+
+            <div>
+                <label class="erp-label">{{ __('Payment Method') }}</label>
+                <select wire:model="payment_method" class="erp-input">
+                    <option value="cash">{{ __('Cash') }}</option>
+                    <option value="bank_transfer">{{ __('Bank Transfer') }}</option>
+                    <option value="card">{{ __('Card') }}</option>
+                    <option value="cheque">{{ __('Cheque') }}</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="erp-label">{{ __('Reference Number') }}</label>
+                <input type="text" wire:model="reference_number" class="erp-input">
+            </div>
+
+            <div>
+                <label class="erp-label">{{ __('Attachment') }}</label>
+                <input type="file" wire:model="attachment" class="erp-input">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="erp-label">{{ __('Description') }}</label>
+                <textarea wire:model="description" rows="3" class="erp-input"></textarea>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t">
+            <a href="{{ route('income.index') }}" class="erp-btn erp-btn-secondary">{{ __('Cancel') }}</a>
+            <button type="submit" class="erp-btn erp-btn-primary">{{ $editMode ? __('Update') : __('Save') }}</button>
+        </div>
+    </form>
+</div>

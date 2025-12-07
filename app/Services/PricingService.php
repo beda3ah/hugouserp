@@ -1,0 +1,88 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Services;
+
+use App\Models\{Tax, PriceGroup, Product};
+use App\Services\Contracts\{PricingServiceInterface, DiscountServiceInterface, TaxServiceInterface};
+use App\Traits\HandlesServiceErrors;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class PricingService implements PricingServiceInterface
+{
+    use HandlesServiceErrors;
+
+    public function __construct(
+        protected DiscountServiceInterface $discounts,
+        protected TaxServiceInterface $taxes
+    ) {}
+
+    public function resolveUnitPrice(Product $product, ?int $priceGroupId = null, ?float $override = null): float
+    {
+        return $this->handleServiceOperation(
+            callback: function () use ($product, $priceGroupId, $override) {
+                if ($override !== null) {
+                    return round((float) $override, 4);
+                }
+
+                if ($priceGroupId && class_exists(PriceGroup::class)) {
+                    $pg = PriceGroup::find($priceGroupId);
+                    if ($pg && method_exists($pg, 'priceFor')) {
+                        $p = $pg->priceFor($product->getKey());
+                        if ($p !== null) {
+                            return round((float) $p, 4);
+                        }
+                    }
+                }
+
+                $base = $product->default_price ?? $product->price ?? 0.0;
+
+                return round((float) $base, 4);
+            },
+            operation: 'resolveUnitPrice',
+            context: ['product_id' => $product->id, 'price_group_id' => $priceGroupId],
+            defaultValue: 0.0
+        );
+    }
+
+    public function lineTotals(array $line): array
+    {
+        return $this->handleServiceOperation(
+            callback: function () use ($line) {
+                $qty     = max(0.0, (float) Arr::get($line, 'qty', 1));
+                $price   = max(0.0, (float) Arr::get($line, 'price', 0));
+                $percent = (bool) Arr::get($line, 'percent', true);
+                $discVal = (float) Arr::get($line, 'discount', 0);
+                $taxId   = Arr::get($line, 'tax_id');
+
+                $subtotal = $qty * $price;
+
+                $discount = $this->discounts->lineTotal($qty, $price, $discVal, $percent);
+                $discount = min($discount, $subtotal);
+
+                $baseAfterDiscount = max(0.0, $subtotal - $discount);
+
+                $taxAmount = 0.0;
+                if (!empty($taxId)) {
+                    $taxAmount = $this->taxes->amountFor($baseAfterDiscount, (int) $taxId);
+                }
+
+                $total = !empty($taxId)
+                    ? $this->taxes->totalWithTax($baseAfterDiscount, (int) $taxId)
+                    : $baseAfterDiscount;
+
+                return [
+                    'subtotal' => round($subtotal, 2),
+                    'discount' => round($discount, 2),
+                    'tax'      => round($taxAmount, 2),
+                    'total'    => round($total, 2),
+                ];
+            },
+            operation: 'lineTotals',
+            context: ['line' => $line],
+            defaultValue: ['subtotal' => 0.0, 'discount' => 0.0, 'tax' => 0.0, 'total' => 0.0]
+        );
+    }
+}

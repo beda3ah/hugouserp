@@ -1,0 +1,446 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services;
+
+use App\Models\ReportTemplate;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+class ScheduledReportService
+{
+    protected string $storagePath = 'reports';
+
+    public function generateAndSend(
+        ReportTemplate $template,
+        string $format,
+        array $recipientEmails,
+        array $filters = [],
+        string $scheduleName = ''
+    ): array {
+        try {
+            $data = $this->fetchReportData($template, $filters);
+            
+            $filePath = $this->generateFile($template, $data, $format);
+            
+            $sentTo = $this->sendEmails($recipientEmails, $filePath, $template, $scheduleName);
+            
+            return [
+                'success' => true,
+                'file_path' => $filePath,
+                'sent_to' => $sentTo,
+                'records_count' => count($data),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Report generation failed', [
+                'template' => $template->name,
+                'error' => $e->getMessage(),
+            ]);
+            
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    protected function fetchReportData(ReportTemplate $template, array $filters): array
+    {
+        $config = json_decode($template->config ?? '{}', true);
+        $reportType = $config['type'] ?? $template->type ?? 'general';
+        
+        return match ($reportType) {
+            'sales' => $this->fetchSalesReportData($filters),
+            'inventory' => $this->fetchInventoryReportData($filters),
+            'customers' => $this->fetchCustomerReportData($filters),
+            'orders' => $this->fetchOrdersReportData($filters),
+            'products' => $this->fetchProductsReportData($filters),
+            default => $this->getSampleData($template),
+        };
+    }
+
+    protected function fetchSalesReportData(array $filters): array
+    {
+        try {
+            $query = DB::table('orders')
+                ->select([
+                    DB::raw('DATE(created_at) as date'),
+                    DB::raw('COUNT(*) as orders_count'),
+                    DB::raw('SUM(total) as total_sales'),
+                    DB::raw('AVG(total) as avg_order'),
+                ]);
+
+            if (!empty($filters['date_from'])) {
+                $query->where('created_at', '>=', $filters['date_from']);
+            }
+            if (!empty($filters['date_to'])) {
+                $query->where('created_at', '<=', $filters['date_to']);
+            }
+            if (!empty($filters['branch_id'])) {
+                $query->where('branch_id', (int) $filters['branch_id']);
+            }
+
+            return $query->groupBy(DB::raw('DATE(created_at)'))
+                ->orderByDesc('date')
+                ->limit(100)
+                ->get()
+                ->map(fn($row) => (array) $row)
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::warning('Sales report data fetch failed', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    protected function fetchInventoryReportData(array $filters): array
+    {
+        try {
+            $query = DB::table('products')
+                ->select(['name', 'sku', 'quantity', 'price', 'cost'])
+                ->where('is_active', true);
+
+            if (!empty($filters['category_id'])) {
+                $query->where('category_id', (int) $filters['category_id']);
+            }
+            if (!empty($filters['low_stock'])) {
+                $query->whereColumn('quantity', '<=', 'reorder_level');
+            }
+
+            return $query->orderBy('name')
+                ->limit(500)
+                ->get()
+                ->map(fn($row) => (array) $row)
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::warning('Inventory report data fetch failed', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    protected function fetchCustomerReportData(array $filters): array
+    {
+        try {
+            $query = DB::table('customers')
+                ->leftJoin('orders', 'customers.id', '=', 'orders.customer_id')
+                ->select([
+                    'customers.name',
+                    'customers.email',
+                    'customers.phone',
+                    DB::raw('COUNT(orders.id) as total_orders'),
+                    DB::raw('COALESCE(SUM(orders.total), 0) as total_spent'),
+                ])
+                ->groupBy('customers.id', 'customers.name', 'customers.email', 'customers.phone');
+
+            if (!empty($filters['branch_id'])) {
+                $query->where('customers.branch_id', (int) $filters['branch_id']);
+            }
+
+            return $query->orderByDesc('total_spent')
+                ->limit(200)
+                ->get()
+                ->map(fn($row) => (array) $row)
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::warning('Customer report data fetch failed', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    protected function fetchOrdersReportData(array $filters): array
+    {
+        try {
+            $query = DB::table('orders')
+                ->leftJoin('customers', 'orders.customer_id', '=', 'customers.id')
+                ->select([
+                    'orders.id',
+                    'orders.order_number',
+                    'customers.name as customer_name',
+                    'orders.total',
+                    'orders.status',
+                    'orders.created_at',
+                ]);
+
+            if (!empty($filters['date_from'])) {
+                $query->where('orders.created_at', '>=', $filters['date_from']);
+            }
+            if (!empty($filters['date_to'])) {
+                $query->where('orders.created_at', '<=', $filters['date_to']);
+            }
+            if (!empty($filters['status'])) {
+                $query->where('orders.status', $filters['status']);
+            }
+
+            return $query->orderByDesc('orders.created_at')
+                ->limit(500)
+                ->get()
+                ->map(fn($row) => (array) $row)
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::warning('Orders report data fetch failed', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    protected function fetchProductsReportData(array $filters): array
+    {
+        try {
+            $query = DB::table('products')
+                ->leftJoin('categories', 'products.category_id', '=', 'categories.id')
+                ->select([
+                    'products.name',
+                    'products.sku',
+                    'categories.name as category',
+                    'products.price',
+                    'products.cost',
+                    'products.quantity',
+                ]);
+
+            if (!empty($filters['category_id'])) {
+                $query->where('products.category_id', (int) $filters['category_id']);
+            }
+            if (!empty($filters['is_active'])) {
+                $query->where('products.is_active', true);
+            }
+
+            return $query->orderBy('products.name')
+                ->limit(500)
+                ->get()
+                ->map(fn($row) => (array) $row)
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::warning('Products report data fetch failed', ['error' => $e->getMessage()]);
+            return [];
+        }
+    }
+
+    protected function getSampleData(ReportTemplate $template): array
+    {
+        $type = $template->type ?? 'general';
+        
+        switch ($type) {
+            case 'sales':
+                return [
+                    ['date' => now()->toDateString(), 'total_sales' => 0, 'orders_count' => 0, 'avg_order' => 0],
+                ];
+            case 'inventory':
+                return [
+                    ['product' => 'No data', 'sku' => '-', 'quantity' => 0, 'value' => 0],
+                ];
+            case 'customers':
+                return [
+                    ['name' => 'No data', 'email' => '-', 'total_orders' => 0],
+                ];
+            default:
+                return [
+                    ['message' => 'No data available for this report'],
+                ];
+        }
+    }
+
+    protected function generateFile(ReportTemplate $template, array $data, string $format): string
+    {
+        $timestamp = now()->format('Y-m-d_His');
+        $safeName = Str::slug($template->name);
+        $filename = "{$safeName}_{$timestamp}.{$format}";
+        
+        Storage::makeDirectory($this->storagePath);
+        
+        $content = match ($format) {
+            'csv' => $this->generateCsv($data),
+            'pdf' => $this->generatePdf($template, $data),
+            'excel', 'xlsx' => $this->generateExcel($data),
+            default => $this->generateCsv($data),
+        };
+        
+        $fullPath = "{$this->storagePath}/{$filename}";
+        Storage::put($fullPath, $content);
+        
+        return Storage::path($fullPath);
+    }
+
+    protected function generateCsv(array $data): string
+    {
+        if (empty($data)) {
+            return '';
+        }
+        
+        $output = fopen('php://temp', 'r+');
+        
+        $headers = array_keys($data[0]);
+        fputcsv($output, $headers);
+        
+        foreach ($data as $row) {
+            fputcsv($output, array_values($row));
+        }
+        
+        rewind($output);
+        $csv = stream_get_contents($output);
+        fclose($output);
+        
+        return $csv;
+    }
+
+    protected function generatePdf(ReportTemplate $template, array $data): string
+    {
+        $html = $this->buildPdfHtml($template, $data);
+        
+        return $html;
+    }
+
+    protected function buildPdfHtml(ReportTemplate $template, array $data): string
+    {
+        $html = '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        h1 { color: #333; border-bottom: 2px solid #10b981; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background-color: #10b981; color: white; padding: 10px; text-align: left; }
+        td { padding: 8px; border-bottom: 1px solid #ddd; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .header { margin-bottom: 20px; }
+        .generated { color: #666; font-size: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>' . htmlspecialchars($template->name) . '</h1>
+        <p class="generated">Generated: ' . now()->format('Y-m-d H:i:s') . '</p>
+    </div>';
+        
+        if (!empty($data)) {
+            $html .= '<table><thead><tr>';
+            foreach (array_keys($data[0]) as $header) {
+                $html .= '<th>' . htmlspecialchars(ucwords(str_replace('_', ' ', $header))) . '</th>';
+            }
+            $html .= '</tr></thead><tbody>';
+            
+            foreach ($data as $row) {
+                $html .= '<tr>';
+                foreach ($row as $value) {
+                    $html .= '<td>' . htmlspecialchars((string) $value) . '</td>';
+                }
+                $html .= '</tr>';
+            }
+            $html .= '</tbody></table>';
+        } else {
+            $html .= '<p>No data available for this report.</p>';
+        }
+        
+        $html .= '</body></html>';
+        
+        return $html;
+    }
+
+    protected function generateExcel(array $data): string
+    {
+        return $this->generateCsv($data);
+    }
+
+    protected function sendEmails(array $recipientEmails, string $filePath, ReportTemplate $template, string $scheduleName): array
+    {
+        $sentTo = [];
+        
+        foreach ($recipientEmails as $email) {
+            $email = trim($email);
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+            
+            try {
+                Mail::raw(
+                    $this->buildEmailBody($template, $scheduleName),
+                    function ($message) use ($email, $filePath, $template, $scheduleName) {
+                        $message->to($email)
+                            ->subject(__('Scheduled Report: :name', ['name' => $scheduleName ?: $template->name]))
+                            ->attach($filePath, [
+                                'as' => basename($filePath),
+                                'mime' => $this->getMimeType($filePath),
+                            ]);
+                    }
+                );
+                
+                $sentTo[] = $email;
+                Log::info("Report sent successfully", ['email' => $email, 'file' => $filePath]);
+                
+            } catch (\Exception $e) {
+                Log::warning("Failed to send report email", [
+                    'email' => $email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+        
+        return $sentTo;
+    }
+
+    protected function buildEmailBody(ReportTemplate $template, string $scheduleName): string
+    {
+        $name = $scheduleName ?: $template->name;
+        
+        return __('Dear User,
+
+Your scheduled report ":name" has been generated and is attached to this email.
+
+Generated at: :time
+
+This is an automated message from Ghanem ERP System.
+
+Best regards,
+Ghanem ERP', [
+            'name' => $name,
+            'time' => now()->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    protected function getMimeType(string $filePath): string
+    {
+        $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+        
+        return match ($extension) {
+            'csv' => 'text/csv',
+            'pdf' => 'application/pdf',
+            'xlsx', 'excel' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            default => 'application/octet-stream',
+        };
+    }
+
+    public function runNow(int $scheduleId): array
+    {
+        $schedule = DB::table('report_schedules')->where('id', $scheduleId)->first();
+        
+        if (!$schedule) {
+            return ['success' => false, 'error' => __('Schedule not found')];
+        }
+        
+        $template = ReportTemplate::find($schedule->report_template_id);
+        
+        if (!$template) {
+            return ['success' => false, 'error' => __('Report template not found')];
+        }
+        
+        $filters = json_decode($schedule->filters ?? '[]', true);
+        
+        $result = $this->generateAndSend(
+            $template,
+            $schedule->format,
+            explode(',', $schedule->recipient_emails),
+            $filters,
+            $schedule->name
+        );
+        
+        if ($result['success']) {
+            DB::table('report_schedules')
+                ->where('id', $scheduleId)
+                ->update(['last_run_at' => now(), 'updated_at' => now()]);
+        }
+        
+        return $result;
+    }
+}

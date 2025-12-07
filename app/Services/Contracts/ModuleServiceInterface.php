@@ -1,0 +1,26 @@
+<?php
+declare(strict_types=1);
+
+namespace App\Services\Contracts;
+
+use App\Models\Branch;
+use App\Models\Module;
+
+interface ModuleServiceInterface
+{
+    /** @return array<int, array{key:string,name:string,enabled:bool}> */
+    public function allForBranch(?int $branchId = null): array;
+
+    public function isEnabled(string $key, ?int $branchId = null): bool;
+
+    /* ====== Extended module management API ====== */
+
+    public function ensureModule(string $key, array $attributes = []): Module;
+
+    public function enableForBranch(Branch $branch, string $moduleKey, array $settings = []): void;
+
+    public function disableForBranch(Branch $branch, string $moduleKey): void;
+
+    /** @return array<string, array{enabled:bool,settings:array}> */
+    public function getBranchModulesConfig(Branch $branch): array;
+}

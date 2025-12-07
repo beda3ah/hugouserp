@@ -1,0 +1,211 @@
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-slate-800">{{ $editMode ? __('Edit Purchase') : __('New Purchase') }}</h1>
+            <p class="text-sm text-slate-500">{{ __('Create purchase order from supplier') }}</p>
+        </div>
+        <a href="{{ route('purchases.index') }}" class="erp-btn erp-btn-secondary">{{ __('Back') }}</a>
+    </div>
+
+    <form wire:submit="save" class="space-y-6">
+        <div class="erp-card p-6">
+            <h3 class="text-lg font-semibold text-slate-700 mb-4">{{ __('Purchase Details') }}</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <div class="flex items-center justify-between">
+                        <label class="erp-label">{{ __('Supplier') }} <span class="text-red-500">*</span></label>
+                        <x-quick-add-link 
+                            route="suppliers.index" 
+                            label="{{ __('Add Supplier') }}"
+                            tooltip="{{ __('Create new supplier') }}" />
+                    </div>
+                    <select wire:model="supplier_id" class="erp-input @error('supplier_id') border-red-500 @enderror">
+                        <option value="">{{ __('Select Supplier') }}</option>
+                        @foreach($suppliers as $supplier)
+                            <option value="{{ $supplier->id }}">{{ $supplier->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('supplier_id') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between">
+                        <label class="erp-label">{{ __('Warehouse') }}</label>
+                        <x-quick-add-link 
+                            route="warehouse.index" 
+                            label="{{ __('Add Warehouse') }}"
+                            tooltip="{{ __('Create new warehouse') }}" />
+                    </div>
+                    <select wire:model="warehouse_id" class="erp-input">
+                        <option value="">{{ __('Select Warehouse') }}</option>
+                        @foreach($warehouses as $warehouse)
+                            <option value="{{ $warehouse->id }}">{{ $warehouse->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="erp-label">{{ __('Reference Number') }}</label>
+                    <input type="text" wire:model="reference_no" class="erp-input" placeholder="{{ __('e.g., INV-12345') }}">
+                </div>
+
+                <div>
+                    <label class="erp-label">{{ __('Status') }}</label>
+                    <select wire:model="status" class="erp-input">
+                        <option value="draft">{{ __('Draft') }}</option>
+                        <option value="pending">{{ __('Pending') }}</option>
+                        <option value="posted">{{ __('Posted') }}</option>
+                        <option value="received">{{ __('Received') }}</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="erp-label">{{ __('Currency') }}</label>
+                    <select wire:model="currency" class="erp-input">
+                        <option value="EGP">EGP</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="SAR">SAR</option>
+                    </select>
+                </div>
+
+                <div class="md:col-span-3">
+                    <label class="erp-label">{{ __('Notes') }}</label>
+                    <textarea wire:model="notes" rows="2" class="erp-input"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="erp-card p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-slate-700">{{ __('Products') }}</h3>
+                <x-quick-add-link 
+                    route="inventory.products.create" 
+                    label="{{ __('Add Product') }}"
+                    tooltip="{{ __('Create new product') }}" />
+            </div>
+            
+            <div class="mb-4">
+                <div class="relative">
+                    <input type="text" wire:model.live.debounce.300ms="productSearch" placeholder="{{ __('Search products by name or SKU...') }}" class="erp-input">
+                    @if(count($searchResults) > 0)
+                        <div class="absolute z-10 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                            @foreach($searchResults as $product)
+                                <button type="button" wire:click="addProduct({{ $product['id'] }})" class="w-full px-4 py-2 text-left hover:bg-emerald-50 flex justify-between items-center">
+                                    <span class="font-medium text-slate-800">{{ $product['name'] }}</span>
+                                    <span class="text-sm text-slate-500">{{ $product['sku'] }} - {{ number_format($product['cost_price'] ?? 0, 2) }}</span>
+                                </button>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            @error('items') <p class="text-red-500 text-sm mb-4">{{ $message }}</p> @enderror
+
+            @if(count($items) > 0)
+                <div class="overflow-x-auto">
+                    <table class="erp-table">
+                        <thead>
+                            <tr>
+                                <th class="w-12">#</th>
+                                <th>{{ __('Product') }}</th>
+                                <th class="w-24">{{ __('SKU') }}</th>
+                                <th class="w-24">{{ __('Qty') }}</th>
+                                <th class="w-32">{{ __('Unit Cost') }}</th>
+                                <th class="w-24">{{ __('Discount') }}</th>
+                                <th class="w-24">{{ __('Tax %') }}</th>
+                                <th class="w-32">{{ __('Total') }}</th>
+                                <th class="w-16"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($items as $index => $item)
+                                <tr>
+                                    <td class="text-center">{{ $index + 1 }}</td>
+                                    <td class="font-medium">{{ $item['product_name'] }}</td>
+                                    <td class="text-slate-500">{{ $item['sku'] }}</td>
+                                    <td>
+                                        <input type="number" wire:model="items.{{ $index }}.qty" step="0.01" min="0.0001" class="erp-input w-full text-center">
+                                    </td>
+                                    <td>
+                                        <input type="number" wire:model="items.{{ $index }}.unit_cost" step="0.01" min="0" class="erp-input w-full text-right">
+                                    </td>
+                                    <td>
+                                        <input type="number" wire:model="items.{{ $index }}.discount" step="0.01" min="0" class="erp-input w-full text-right">
+                                    </td>
+                                    <td>
+                                        <input type="number" wire:model="items.{{ $index }}.tax_rate" step="0.01" min="0" max="100" class="erp-input w-full text-right">
+                                    </td>
+                                    <td class="text-right font-medium">
+                                        @php
+                                            $lineTotal = ($item['qty'] * $item['unit_cost']) - ($item['discount'] ?? 0);
+                                            $lineTotal += $lineTotal * (($item['tax_rate'] ?? 0) / 100);
+                                        @endphp
+                                        {{ number_format($lineTotal, 2) }}
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" wire:click="removeItem({{ $index }})" class="text-red-500 hover:text-red-700">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="text-center py-8 text-slate-400">
+                    <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    <p>{{ __('No products added yet. Search and add products above.') }}</p>
+                </div>
+            @endif
+        </div>
+
+        <div class="erp-card p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="erp-label">{{ __('Discount') }}</label>
+                            <input type="number" wire:model.live="discount_total" step="0.01" min="0" class="erp-input">
+                        </div>
+                        <div>
+                            <label class="erp-label">{{ __('Shipping') }}</label>
+                            <input type="number" wire:model.live="shipping_total" step="0.01" min="0" class="erp-input">
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-slate-50 rounded-lg p-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">{{ __('Subtotal') }}</span>
+                            <span class="font-medium">{{ number_format($subTotal, 2) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">{{ __('Tax') }}</span>
+                            <span class="font-medium">{{ number_format($taxTotal, 2) }}</span>
+                        </div>
+                        <div class="flex justify-between text-red-600">
+                            <span>{{ __('Discount') }}</span>
+                            <span class="font-medium">-{{ number_format($discount_total, 2) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-600">{{ __('Shipping') }}</span>
+                            <span class="font-medium">{{ number_format($shipping_total, 2) }}</span>
+                        </div>
+                        <div class="border-t pt-2 flex justify-between text-lg">
+                            <span class="font-bold text-slate-800">{{ __('Grand Total') }}</span>
+                            <span class="font-bold text-emerald-600">{{ number_format($grandTotal, 2) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <a href="{{ route('purchases.index') }}" class="erp-btn erp-btn-secondary">{{ __('Cancel') }}</a>
+            <button type="submit" class="erp-btn erp-btn-primary">{{ $editMode ? __('Update Purchase') : __('Create Purchase') }}</button>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,89 @@
+<div class="p-6 max-w-2xl mx-auto">
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-slate-800">{{ __('Two-Factor Authentication') }}</h1>
+        <p class="text-slate-500">{{ __('Add extra security to your account') }}</p>
+    </div>
+
+    @if (session('success'))
+        <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        @if ($enabled)
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-slate-800">{{ __('2FA is enabled') }}</h3>
+                    <p class="text-sm text-slate-500">{{ __('Your account is protected with two-factor authentication') }}</p>
+                </div>
+            </div>
+
+            @if ($showRecoveryCodes && !empty($recoveryCodes))
+                <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                    <h4 class="font-medium text-amber-800 mb-2">{{ __('Recovery Codes') }}</h4>
+                    <p class="text-sm text-amber-700 mb-3">{{ __('Store these codes in a safe place. Each code can only be used once.') }}</p>
+                    <div class="grid grid-cols-2 gap-2 font-mono text-sm">
+                        @foreach ($recoveryCodes as $code)
+                            <div class="p-2 bg-white rounded border border-amber-200">{{ $code }}</div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            <div class="flex flex-wrap gap-3">
+                <button wire:click="regenerateRecoveryCodes" class="erp-btn-secondary">
+                    {{ __('Regenerate Recovery Codes') }}
+                </button>
+                <button wire:click="disable" class="px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition"
+                    onclick="return confirm('{{ __('Are you sure you want to disable 2FA?') }}')">
+                    {{ __('Disable 2FA') }}
+                </button>
+            </div>
+        @else
+            <div class="text-center">
+                <div class="mb-6">
+                    <h3 class="font-medium text-slate-800 mb-2">{{ __('Scan QR Code') }}</h3>
+                    <p class="text-sm text-slate-500 mb-4">{{ __('Use Google Authenticator or similar app to scan this code') }}</p>
+                    <div class="flex justify-center mb-4">
+                        {!! $qrCodeSvg !!}
+                    </div>
+                    <div class="text-xs text-slate-500">
+                        {{ __('Or enter this key manually:') }}
+                        <code class="block mt-1 p-2 bg-slate-100 rounded font-mono text-sm">{{ $secret }}</code>
+                    </div>
+                </div>
+
+                <form wire:submit="enable" class="max-w-xs mx-auto">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('Verification Code') }}</label>
+                        <input type="text" wire:model="code"
+                            class="erp-input w-full text-center text-xl tracking-widest"
+                            placeholder="000000"
+                            maxlength="6"
+                            inputmode="numeric"
+                            pattern="[0-9]*">
+                        @error('code')
+                            <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <button type="submit" class="erp-btn-primary w-full">
+                        <span wire:loading.remove>{{ __('Enable 2FA') }}</span>
+                        <span wire:loading>{{ __('Verifying...') }}</span>
+                    </button>
+                </form>
+            </div>
+        @endif
+    </div>
+
+    <div class="mt-4 text-center">
+        <a href="{{ route('dashboard') }}" class="text-sm text-slate-500 hover:text-slate-700">
+            {{ __('Back to Dashboard') }}
+        </a>
+    </div>
+</div>

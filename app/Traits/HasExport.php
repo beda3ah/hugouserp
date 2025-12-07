@@ -1,0 +1,88 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Traits;
+
+use App\Services\ExportService;
+
+trait HasExport
+{
+    public bool $showExportModal = false;
+    public array $exportColumns = [];
+    public array $selectedExportColumns = [];
+    public string $exportFormat = 'xlsx';
+    public bool $exportIncludeHeaders = true;
+    public string $exportDateFormat = 'Y-m-d';
+
+    public function initializeExport(string $entityType): void
+    {
+        $exportService = app(ExportService::class);
+        $this->exportColumns = $exportService->getAvailableColumns($entityType);
+        $this->selectedExportColumns = array_keys($this->exportColumns);
+    }
+
+    public function openExportModal(): void
+    {
+        $this->showExportModal = true;
+    }
+
+    public function closeExportModal(): void
+    {
+        $this->showExportModal = false;
+    }
+
+    public function toggleAllExportColumns(): void
+    {
+        if (count($this->selectedExportColumns) === count($this->exportColumns)) {
+            $this->selectedExportColumns = [];
+        } else {
+            $this->selectedExportColumns = array_keys($this->exportColumns);
+        }
+    }
+
+    protected function performExport(string $entityType, $data, string $title = 'Export')
+    {
+        if (empty($this->selectedExportColumns)) {
+            session()->flash('error', __('Please select at least one column'));
+            return null;
+        }
+
+        $exportService = app(ExportService::class);
+        
+        $exportData = collect($data)->map(function ($item) {
+            if (is_object($item) && method_exists($item, 'toArray')) {
+                $array = $item->toArray();
+            } elseif (is_object($item)) {
+                $array = get_object_vars($item);
+            } else {
+                $array = $item;
+            }
+            
+            return collect($this->selectedExportColumns)
+                ->mapWithKeys(fn ($col) => [$col => data_get($array, $col)])
+                ->toArray();
+        });
+
+        $filename = $entityType . '_export_' . date('Y-m-d_His');
+
+        $filepath = $exportService->export(
+            $exportData,
+            $this->selectedExportColumns,
+            $this->exportFormat,
+            [
+                'available_columns' => $this->exportColumns,
+                'title' => $title,
+                'filename' => $filename,
+                'date_format' => $this->exportDateFormat,
+                'include_headers' => $this->exportIncludeHeaders,
+            ]
+        );
+
+        $this->closeExportModal();
+        
+        $downloadName = $filename . '.' . $this->exportFormat;
+        
+        return response()->download($filepath, $downloadName)->deleteFileAfterSend(true);
+    }
+}

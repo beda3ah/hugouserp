@@ -1,0 +1,144 @@
+{{-- resources/views/layouts/app.blade.php --}}
+@php
+    $locale = app()->getLocale();
+    $dir = $locale === 'ar' ? 'rtl' : 'ltr';
+@endphp
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', $locale) }}" dir="{{ $dir }}" class="h-full antialiased">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>@yield('title', config('app.name', 'Ghanem ERP'))</title>
+
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <style>
+        * { font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif !important; }
+    </style>
+
+    <script>
+        window.Laravel = {
+            @if(auth()->check())
+                userId: {{ auth()->id() }},
+            @else
+                userId: null,
+            @endif
+        };
+    </script>
+
+    @livewireStyles
+</head>
+<body class="h-full text-[15px] sm:text-base"
+      x-data="{ sidebarOpen: false }">
+
+<div class="min-h-screen flex {{ $dir === 'rtl' ? 'flex-row-reverse' : 'flex-row' }}">
+
+    {{-- Sidebar --}}
+    @includeIf('layouts.sidebar')
+
+    {{-- Main --}}
+    <div class="flex-1 flex flex-col min-h-screen">
+
+        {{-- Navbar --}}
+        @includeIf('layouts.navbar')
+
+        <main class="flex-1">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 space-y-4">
+
+                @hasSection('page-header')
+                    @php
+                        $routeName = \Illuminate\Support\Facades\Route::currentRouteName();
+                        $routePermissions = [
+                            'dashboard'                 => config('screen_permissions.dashboard', 'dashboard.view'),
+                            'pos.terminal'              => config('screen_permissions.pos.terminal', 'pos.use'),
+                            'pos.offline.report'        => 'pos.offline.report.view',
+                            'admin.users.index'         => config('screen_permissions.admin.users.index', 'users.manage'),
+                            'admin.users.create'        => config('screen_permissions.admin.users.index', 'users.manage'),
+                            'admin.users.edit'          => config('screen_permissions.admin.users.index', 'users.manage'),
+                            'admin.branches.index'      => config('screen_permissions.admin.branches.index', 'branches.view'),
+                            'admin.branches.create'     => config('screen_permissions.admin.branches.index', 'branches.view'),
+                            'admin.branches.edit'       => config('screen_permissions.admin.branches.index', 'branches.view'),
+                            'admin.settings.system'     => config('screen_permissions.admin.settings.system', 'settings.view'),
+                            'admin.settings.branch'     => config('screen_permissions.admin.settings.branch', 'settings.branch'),
+                            'notifications.center'      => config('screen_permissions.notifications.center', 'system.view-notifications'),
+                            'inventory.products.index'  => config('screen_permissions.inventory.products.index', 'inventory.products.view'),
+                            'inventory.products.create' => config('screen_permissions.inventory.products.index', 'inventory.products.view'),
+                            'inventory.products.edit'   => config('screen_permissions.inventory.products.index', 'inventory.products.view'),
+                            'hrm.reports.dashboard'     => config('screen_permissions.hrm.reports.dashboard', 'hr.view-reports'),
+                            'rental.reports.dashboard'  => config('screen_permissions.rental.reports.dashboard', 'rental.view-reports'),
+                            'admin.logs.audit'          => config('screen_permissions.logs.audit', 'logs.audit.view'),
+                        ];
+                        $requiredPermission = $routePermissions[$routeName] ?? null;
+                    @endphp
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex flex-col gap-1">
+                            @yield('page-header')
+                        </div>
+                        <div class="flex items-center gap-2">
+                            @if ($requiredPermission)
+                                <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[11px] font-medium text-slate-600">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                    <span>can:{{ $requiredPermission }}</span>
+                                </span>
+                            @endif
+                            @yield('page-actions')
+                        </div>
+                    </div>
+                @else
+
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex flex-col gap-1">
+                            @yield('page-header')
+                        </div>
+                        @yield('page-actions')
+                    </div>
+                @endif
+
+                @if (session('status'))
+                    <div class="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-800 shadow-sm shadow-emerald-500/20">
+                        {{ session('status') }}
+                    </div>
+                @endif
+
+                @if ($errors->any())
+                    <div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800 shadow-sm">
+                        <ul class="list-disc ms-4 space-y-1">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                <div class="erp-card p-4 sm:p-6">
+                    {{ $slot ?? '' }}
+                    @yield('content')
+                </div>
+            </div>
+        </main>
+
+        <footer class="border-t border-emerald-100/60 bg-white/80 backdrop-blur py-3 text-xs text-slate-500">
+            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+                <span>&copy; {{ date('Y') }} {{ config('app.name', 'Ghanem ERP') }}</span>
+                <span class="hidden sm:inline">
+                    {{ __('Powered by Laravel & Livewire') }}
+                </span>
+            </div>
+        </footer>
+    </div>
+</div>
+
+@livewireScripts
+@stack('scripts')
+
+    <div id="erp-toast-root" class="fixed inset-0 pointer-events-none flex flex-col items-end justify-start px-4 py-6 space-y-2 z-[9999]"></div>
+    
+</body>
+</html>

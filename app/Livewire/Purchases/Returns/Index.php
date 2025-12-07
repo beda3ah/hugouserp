@@ -1,0 +1,229 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Livewire\Purchases\Returns;
+
+use App\Models\Purchase;
+use App\Models\ReturnNote;
+use App\Models\User;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Livewire\Component;
+use Livewire\WithPagination;
+
+class Index extends Component
+{
+    use WithPagination;
+
+    public string $search = '';
+    public string $dateFrom = '';
+    public string $dateTo = '';
+    public int $perPage = 15;
+
+    public bool $showReturnModal = false;
+    public ?int $selectedPurchaseId = null;
+    public ?Purchase $selectedPurchase = null;
+    public array $returnItems = [];
+    public string $returnReason = '';
+
+    protected $queryString = ['search', 'dateFrom', 'dateTo'];
+
+    protected function getUserBranchId(): ?int
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        return $user?->branch_id;
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function openReturnModal(?int $purchaseId = null): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (!$user?->can('purchases.return')) {
+            $this->dispatch('notify', type: 'error', message: __('Unauthorized'));
+            return;
+        }
+
+        $this->selectedPurchaseId = $purchaseId;
+        $this->selectedPurchase = null;
+        $this->returnItems = [];
+        $this->returnReason = '';
+        
+        if ($purchaseId) {
+            $this->loadPurchase();
+        }
+        
+        $this->showReturnModal = true;
+    }
+
+    public function loadPurchase(): void
+    {
+        if (!$this->selectedPurchaseId) {
+            return;
+        }
+
+        $branchId = $this->getUserBranchId();
+
+        $this->selectedPurchase = Purchase::with(['items.product', 'supplier'])
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->where('id', $this->selectedPurchaseId)
+            ->whereNotIn('status', ['returned', 'cancelled'])
+            ->first();
+
+        if (!$this->selectedPurchase) {
+            $this->dispatch('notify', type: 'error', message: __('Purchase not found or already returned'));
+            $this->selectedPurchaseId = null;
+            return;
+        }
+
+        $this->returnItems = $this->selectedPurchase->items->map(fn($item) => [
+            'product_id' => $item->product_id,
+            'product_name' => $item->product?->name ?? 'Unknown',
+            'max_qty' => (float) $item->qty,
+            'qty' => 0,
+            'cost' => (float) $item->cost,
+        ])->toArray();
+    }
+
+    public function processReturn(): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (!$user?->can('purchases.return')) {
+            $this->dispatch('notify', type: 'error', message: __('Unauthorized'));
+            return;
+        }
+
+        if (!$this->selectedPurchaseId || !$this->selectedPurchase) {
+            $this->dispatch('notify', type: 'error', message: __('Please select a valid purchase'));
+            return;
+        }
+
+        $branchId = $this->getUserBranchId();
+        $purchase = Purchase::query()
+            ->with('items')
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->where('id', $this->selectedPurchaseId)
+            ->whereNotIn('status', ['returned', 'cancelled'])
+            ->first();
+
+        if (!$purchase) {
+            $this->dispatch('notify', type: 'error', message: __('Purchase not found or already processed'));
+            return;
+        }
+
+        $itemsToReturn = collect($this->returnItems)
+            ->filter(fn($item) => $item['qty'] > 0)
+            ->values()
+            ->toArray();
+
+        if (empty($itemsToReturn)) {
+            $this->dispatch('notify', type: 'error', message: __('Please select at least one item to return'));
+            return;
+        }
+
+        try {
+            DB::transaction(function () use ($itemsToReturn, $user, $purchase) {
+                $refund = 0.0;
+                foreach ($itemsToReturn as $it) {
+                    $pi = $purchase->items->firstWhere('product_id', $it['product_id']);
+                    if (!$pi) continue;
+                    $qty = min((float)$it['qty'], (float)$pi->qty);
+                    $line = $qty * (float)$pi->cost;
+                    $refund += $line;
+                }
+
+                ReturnNote::create([
+                    'branch_id' => $purchase->branch_id,
+                    'purchase_id' => $purchase->id,
+                    'reason' => $this->returnReason ?: null,
+                    'total' => $refund,
+                    'created_by' => $user->id,
+                ]);
+
+                $purchase->status = 'returned';
+                $purchase->save();
+            });
+
+            $this->showReturnModal = false;
+            $this->selectedPurchase = null;
+            $this->selectedPurchaseId = null;
+            $this->returnItems = [];
+            $this->returnReason = '';
+            $this->dispatch('notify', type: 'success', message: __('Purchase return processed successfully'));
+        } catch (\Exception $e) {
+            $this->dispatch('notify', type: 'error', message: __('Failed to process return. Please try again.'));
+        }
+    }
+
+    public function closeReturnModal(): void
+    {
+        $this->showReturnModal = false;
+        $this->selectedPurchase = null;
+        $this->selectedPurchaseId = null;
+        $this->returnItems = [];
+        $this->returnReason = '';
+    }
+
+    public function deleteReturn(int $id): void
+    {
+        /** @var User|null $user */
+        $user = Auth::user();
+        if (!$user?->can('purchases.return')) {
+            $this->dispatch('notify', type: 'error', message: __('Unauthorized'));
+            return;
+        }
+
+        $branchId = $this->getUserBranchId();
+        $returnNote = ReturnNote::query()
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->where('id', $id)
+            ->first();
+
+        if ($returnNote) {
+            $returnNote->delete();
+            $this->dispatch('notify', type: 'success', message: __('Return note deleted'));
+        } else {
+            $this->dispatch('notify', type: 'error', message: __('Return note not found'));
+        }
+    }
+
+    public function render(): View
+    {
+        $branchId = $this->getUserBranchId();
+
+        $returns = ReturnNote::query()
+            ->with(['purchase.supplier'])
+            ->whereNotNull('purchase_id')
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->when($this->search, function ($query) {
+                $query->whereHas('purchase', function ($q) {
+                    $q->where('reference_no', 'ilike', '%' . $this->search . '%');
+                });
+            })
+            ->when($this->dateFrom, fn($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn($q) => $q->whereDate('created_at', '<=', $this->dateTo))
+            ->orderByDesc('created_at')
+            ->paginate($this->perPage);
+
+        $purchases = Purchase::query()
+            ->with('supplier')
+            ->when($branchId, fn($q) => $q->where('branch_id', $branchId))
+            ->whereNotIn('status', ['returned', 'cancelled'])
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get();
+
+        return view('livewire.purchases.returns.index', [
+            'returns' => $returns,
+            'purchases' => $purchases,
+        ]);
+    }
+}

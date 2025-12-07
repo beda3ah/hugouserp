@@ -1,0 +1,175 @@
+<?php
+declare(strict_types=1);
+
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Request;
+
+if (! function_exists('current_user')) {
+    function current_user(): ?\Illuminate\Contracts\Auth\Authenticatable
+    {
+        return Auth::user();
+    }
+}
+
+if (! function_exists('current_branch_id')) {
+    function current_branch_id(): ?int
+    {
+        $req = Request::instance();
+
+        if ($req && $req->attributes->has('branch_id')) {
+            $id = $req->attributes->get('branch_id');
+
+            return $id !== null ? (int) $id : null;
+        }
+
+        if (app()->has('req.branch_id')) {
+            $id = app('req.branch_id');
+
+            return $id !== null ? (int) $id : null;
+        }
+
+        return null;
+    }
+}
+
+if (! function_exists('money')) {
+    function money(float $amount, string $currency = 'EGP'): string
+    {
+        $formatted = number_format($amount, 2, '.', ',');
+
+        return $formatted . ' ' . $currency;
+    }
+}
+
+if (! function_exists('percent')) {
+    function percent(float $value, int $decimals = 2): string
+    {
+        return number_format($value, $decimals, '.', ',') . '%';
+    }
+}
+
+if (! function_exists('sanitize_svg_icon')) {
+    /**
+     * Sanitize SVG icon content using a strict allow-list approach.
+     * Only allows safe SVG elements and attributes to prevent XSS.
+     *
+     * @param string|null $svg The SVG content to sanitize
+     * @return string Sanitized SVG or empty string
+     */
+    function sanitize_svg_icon(?string $svg): string
+    {
+        if (empty($svg)) {
+            return '';
+        }
+
+        // Define allowed SVG elements (strict subset - no foreignObject, script, etc.)
+        $allowedTags = [
+            'svg', 'path', 'circle', 'rect', 'line', 'polyline', 'polygon',
+            'ellipse', 'g', 'defs', 'symbol', 'title', 'desc',
+            'linearGradient', 'radialGradient', 'stop', 'clipPath', 'mask'
+        ];
+
+        // Define allowed attributes (strict subset - no event handlers, no href for safety)
+        $allowedAttrs = [
+            'id', 'class', 'width', 'height', 'viewbox', 'fill',
+            'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin',
+            'd', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'x1', 'x2', 'y', 'y1', 'y2',
+            'points', 'transform', 'opacity', 'fill-opacity', 'stroke-opacity',
+            'clip-path', 'offset', 'stop-color', 'stop-opacity',
+            'xmlns', 'preserveaspectratio', 'fill-rule', 'clip-rule', 'vector-effect'
+        ];
+
+        // Use DOMDocument for proper parsing
+        libxml_use_internal_errors(true);
+        $dom = new \DOMDocument();
+        
+        // Wrap in HTML to ensure proper parsing
+        $wrapped = '<!DOCTYPE html><html><body>' . $svg . '</body></html>';
+        $dom->loadHTML($wrapped, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NOERROR);
+        libxml_clear_errors();
+
+        // Collect elements to remove (cannot modify during iteration)
+        $toRemove = [];
+        
+        // Find and sanitize all elements
+        $xpath = new \DOMXPath($dom);
+        $allElements = $xpath->query('//*');
+
+        foreach ($allElements as $element) {
+            if (!$element instanceof \DOMElement) {
+                continue;
+            }
+
+            $tagName = strtolower($element->tagName);
+
+            // Only allow explicitly whitelisted elements
+            if (!in_array($tagName, array_merge($allowedTags, ['html', 'body']))) {
+                $toRemove[] = $element;
+                continue;
+            }
+
+            // Remove disallowed attributes
+            $attrsToRemove = [];
+            foreach ($element->attributes as $attr) {
+                $attrName = strtolower($attr->name);
+                
+                // Normalize value: decode entities, remove control chars, collapse whitespace
+                $attrValue = html_entity_decode($attr->value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                $attrValue = preg_replace('/[\x00-\x1f\x7f]/u', '', $attrValue); // Remove control chars
+                $attrValue = preg_replace('/\s+/', ' ', $attrValue); // Collapse whitespace
+                $attrValue = strtolower(trim($attrValue));
+
+                // Remove any event handlers (on*)
+                if (preg_match('/^on[a-z]/i', $attrName)) {
+                    $attrsToRemove[] = $attr->name;
+                    continue;
+                }
+
+                // Block any href/xlink:href attributes (potential javascript: vectors)
+                if (in_array($attrName, ['href', 'xlink:href', 'src', 'data', 'action', 'formaction'])) {
+                    $attrsToRemove[] = $attr->name;
+                    continue;
+                }
+
+                // Remove dangerous attribute values (with normalized value check)
+                if (preg_match('/(javascript|data\s*:|expression|vbscript|behavior|binding)/i', $attrValue)) {
+                    $attrsToRemove[] = $attr->name;
+                    continue;
+                }
+
+                // Remove style attribute entirely for safety (CSS can contain exploits)
+                if ($attrName === 'style') {
+                    $attrsToRemove[] = $attr->name;
+                    continue;
+                }
+
+                // Only allow explicitly whitelisted attributes
+                if (!in_array($attrName, $allowedAttrs)) {
+                    $attrsToRemove[] = $attr->name;
+                }
+            }
+
+            foreach ($attrsToRemove as $attrName) {
+                $element->removeAttribute($attrName);
+            }
+        }
+
+        // Remove elements marked for removal
+        foreach ($toRemove as $element) {
+            $element->parentNode?->removeChild($element);
+        }
+
+        // Extract content from body
+        $body = $dom->getElementsByTagName('body')->item(0);
+        if (!$body) {
+            return '';
+        }
+
+        $result = '';
+        foreach ($body->childNodes as $child) {
+            $result .= $dom->saveHTML($child);
+        }
+
+        return trim($result);
+    }
+}

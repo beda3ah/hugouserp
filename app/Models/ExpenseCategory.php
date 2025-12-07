@@ -1,0 +1,46 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class ExpenseCategory extends Model
+{
+    protected $table = 'expense_categories';
+
+    protected $fillable = [
+        'branch_id',
+        'name',
+        'name_ar',
+        'description',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class, 'category_id');
+    }
+
+    public function getLocalizedNameAttribute(): string
+    {
+        return app()->getLocale() === 'ar' && $this->name_ar ? $this->name_ar : $this->name;
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+}

@@ -1,0 +1,298 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
+
+@layer base {
+    :root {
+        color-scheme: light;
+        --color-primary: #10b981;
+        --color-primary-dark: #059669;
+        --color-primary-light: #34d399;
+    }
+    
+    .dark {
+        color-scheme: dark;
+    }
+    
+    html {
+        font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    body {
+        @apply bg-gradient-to-br from-emerald-50 via-slate-50 to-slate-100 text-slate-900;
+        font-family: 'Cairo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .dark body {
+        @apply bg-slate-950 text-slate-100;
+    }
+
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .erp-card {
+        @apply rounded-2xl border border-emerald-100/60 bg-gradient-to-br from-emerald-50 via-slate-50 to-white shadow-[0_18px_45px_-25px_rgba(16,185,129,0.65)];
+    }
+
+    .erp-card-dark {
+        @apply rounded-2xl border border-emerald-500/40 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 shadow-[0_18px_45px_-25px_rgba(16,185,129,0.9)];
+    }
+
+    .erp-btn-primary {
+        @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition-all duration-300 ease-out;
+    }
+    
+    .erp-btn-primary:hover {
+        @apply from-emerald-600 to-emerald-700 shadow-emerald-500/50 -translate-y-0.5 shadow-xl;
+    }
+    
+    .erp-btn-primary:active {
+        @apply from-emerald-700 to-emerald-800 translate-y-0 shadow-md;
+    }
+    
+    .erp-btn-primary:focus {
+        @apply outline-none ring-2 ring-emerald-500 ring-offset-2;
+    }
+    
+    .erp-btn-primary:disabled {
+        @apply opacity-50 cursor-not-allowed hover:translate-y-0 hover:shadow-lg;
+    }
+
+    .erp-btn-secondary {
+        @apply inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition-all duration-300 ease-out;
+    }
+    
+    .erp-btn-secondary:hover {
+        @apply bg-slate-50 border-slate-300 -translate-y-0.5 shadow-md text-slate-900;
+    }
+    
+    .erp-btn-secondary:active {
+        @apply bg-slate-100 translate-y-0;
+    }
+    
+    .erp-btn-secondary:focus {
+        @apply outline-none ring-2 ring-slate-500 ring-offset-2;
+    }
+    
+    .dark .erp-btn-secondary {
+        @apply bg-slate-800 border-slate-600 text-slate-200;
+    }
+    
+    .dark .erp-btn-secondary:hover {
+        @apply bg-slate-700 text-white;
+    }
+
+    .erp-btn-danger {
+        @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-red-500 to-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-500/30 transition-all duration-300 ease-out;
+    }
+    
+    .erp-btn-danger:hover {
+        @apply from-red-600 to-red-700 shadow-red-500/50 -translate-y-0.5 shadow-xl;
+    }
+    
+    .erp-btn-danger:active {
+        @apply from-red-700 to-red-800 translate-y-0 shadow-md;
+    }
+    
+    .erp-btn-danger:focus {
+        @apply outline-none ring-2 ring-red-500 ring-offset-2;
+    }
+
+    .erp-btn-warning {
+        @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/30 transition-all duration-300 ease-out;
+    }
+    
+    .erp-btn-warning:hover {
+        @apply from-amber-600 to-amber-700 shadow-amber-500/50 -translate-y-0.5 shadow-xl;
+    }
+    
+    .erp-btn-warning:active {
+        @apply from-amber-700 to-amber-800 translate-y-0 shadow-md;
+    }
+    
+    .erp-btn-warning:focus {
+        @apply outline-none ring-2 ring-amber-500 ring-offset-2;
+    }
+
+    .erp-btn-info {
+        @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 ease-out;
+    }
+    
+    .erp-btn-info:hover {
+        @apply from-blue-600 to-blue-700 shadow-blue-500/50 -translate-y-0.5 shadow-xl;
+    }
+    
+    .erp-btn-info:active {
+        @apply from-blue-700 to-blue-800 translate-y-0 shadow-md;
+    }
+    
+    .erp-btn-info:focus {
+        @apply outline-none ring-2 ring-blue-500 ring-offset-2;
+    }
+
+    .erp-btn-icon {
+        @apply inline-flex items-center justify-center w-9 h-9 rounded-lg border border-slate-200 bg-white text-slate-600 transition-all duration-300 ease-out;
+    }
+    
+    .erp-btn-icon:hover {
+        @apply bg-slate-50 text-slate-900 border-slate-300 -translate-y-0.5 shadow-md;
+    }
+    
+    .erp-btn-icon:active {
+        @apply bg-slate-100 translate-y-0;
+    }
+    
+    .erp-btn-icon:focus {
+        @apply outline-none ring-2 ring-emerald-500;
+    }
+    
+    .dark .erp-btn-icon {
+        @apply bg-slate-800 border-slate-600 text-slate-300;
+    }
+    
+    .dark .erp-btn-icon:hover {
+        @apply bg-slate-700 text-white;
+    }
+
+    .erp-badge {
+        @apply inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[0.7rem] font-medium text-emerald-700;
+    }
+
+    .erp-badge-success {
+        @apply inline-flex items-center rounded-full bg-green-100 text-green-700 px-2.5 py-0.5 text-xs font-medium;
+    }
+
+    .erp-badge-warning {
+        @apply inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-2.5 py-0.5 text-xs font-medium;
+    }
+
+    .erp-badge-danger {
+        @apply inline-flex items-center rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-medium;
+    }
+
+    .erp-badge-info {
+        @apply inline-flex items-center rounded-full bg-blue-100 text-blue-700 px-2.5 py-0.5 text-xs font-medium;
+    }
+
+    .erp-input {
+        @apply block w-full rounded-xl border border-slate-200 bg-white/60 px-4 py-3 text-sm text-slate-900 shadow-sm shadow-emerald-500/5 placeholder:text-slate-400 transition-all duration-300 ease-out;
+    }
+    
+    .erp-input:hover {
+        @apply border-slate-300 bg-white;
+    }
+    
+    .erp-input:focus {
+        @apply bg-white border-emerald-500 outline-none ring-2 ring-emerald-500/20 shadow-md;
+    }
+    
+    .dark .erp-input {
+        @apply bg-slate-900/80 border-slate-700 text-slate-100;
+    }
+    
+    .dark .erp-input:hover {
+        @apply border-slate-600;
+    }
+    
+    .dark .erp-input:focus {
+        @apply border-emerald-500 ring-emerald-500/20;
+    }
+
+    .erp-label {
+        @apply block text-sm font-medium text-slate-700 dark:text-slate-300;
+    }
+
+    .erp-table {
+        @apply w-full text-sm text-slate-700 dark:text-slate-300;
+    }
+
+    .erp-table thead {
+        @apply sticky top-0 z-10 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700;
+    }
+
+    .erp-table th {
+        @apply px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-200 whitespace-nowrap;
+    }
+
+    .erp-table tbody tr {
+        @apply border-b border-slate-100 dark:border-slate-800 transition-colors duration-200;
+    }
+    
+    .erp-table tbody tr:hover {
+        @apply bg-emerald-50/70 dark:bg-slate-800/70;
+    }
+
+    .erp-table tbody tr:nth-child(even) {
+        @apply bg-slate-50/50 dark:bg-slate-900/30;
+    }
+    
+    .erp-table tbody tr:nth-child(even):hover {
+        @apply bg-emerald-50/70 dark:bg-slate-800/70;
+    }
+
+    .erp-table td {
+        @apply px-4 py-3;
+    }
+
+    .erp-link {
+        @apply text-emerald-600 font-medium transition-all duration-200;
+    }
+    
+    .erp-link:hover {
+        @apply text-emerald-700 underline underline-offset-2;
+    }
+
+    .sidebar-link {
+        @apply flex items-center gap-3 rounded-xl px-3 py-2.5 text-white shadow-sm transition-all duration-300 ease-out;
+    }
+    
+    .sidebar-link:hover {
+        @apply shadow-lg -translate-y-0.5 brightness-110;
+    }
+    
+    .sidebar-link:active {
+        @apply translate-y-0 shadow-md brightness-95;
+    }
+    
+    .sidebar-link.active {
+        @apply ring-2 ring-white/30 shadow-lg scale-[1.02];
+    }
+
+    .sidebar-link-secondary {
+        @apply flex items-center gap-3 rounded-xl px-3 py-2 text-slate-300 transition-all duration-200;
+    }
+    
+    .sidebar-link-secondary:hover {
+        @apply bg-slate-700/50 text-white;
+    }
+    
+    .sidebar-link-secondary.active {
+        @apply bg-emerald-500/20 text-emerald-400 border-l-2 border-emerald-500;
+    }
+}
+
+[dir="rtl"] {
+    .erp-table th,
+    .erp-table td {
+        @apply text-right;
+    }
+    
+    .sidebar-link-secondary.active {
+        @apply border-l-0 border-r-2;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .erp-btn-primary,
+    .erp-btn-secondary,
+    .erp-btn-danger,
+    .erp-btn-warning,
+    .erp-btn-info,
+    .erp-btn-icon,
+    .sidebar-link,
+    .sidebar-link-secondary {
+        @apply transition-none;
+    }
+}

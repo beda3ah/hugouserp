@@ -1,0 +1,305 @@
+<div class="space-y-6">
+    @include('components.erp.breadcrumb', [
+        'items' => [
+            ['label' => 'System'],
+            ['label' => 'Overview'],
+        ],
+    ])
+
+    @php
+        $today = now()->toDateString();
+        $from = now()->subDays(14)->toDateString();
+
+        $saleModel = '\\App\\Models\\Sale';
+        $salesStats = [
+            'count' => class_exists($saleModel) ? $saleModel::count() : 0,
+            'today' => class_exists($saleModel) ? $saleModel::whereDate('created_at', $today)->sum('grand_total') : 0,
+            'total' => class_exists($saleModel) ? $saleModel::sum('grand_total') : 0,
+        ];
+
+        $employeeModel = '\\App\\Models\\HREmployee';
+        $attendanceModel = '\\App\\Models\\Attendance';
+        $hrStats = [
+            'employees' => class_exists($employeeModel) ? $employeeModel::count() : 0,
+            'today_attendance' => class_exists($attendanceModel) ? $attendanceModel::whereDate('date', $today)->count() : 0,
+        ];
+
+        $unitModel = '\\App\\Models\\RentalUnit';
+        $contractModel = '\\App\\Models\\RentalContract';
+        $rentalStats = [
+            'units' => class_exists($unitModel) ? $unitModel::count() : 0,
+            'active_contracts' => class_exists($contractModel) ? $contractModel::where('status', 'active')->count() : 0,
+        ];
+
+        $branchModel = '\\App\\Models\\Branch';
+        $customerModel = '\\App\\Models\\Customer';
+        $metaStats = [
+            'branches' => class_exists($branchModel) ? $branchModel::count() : 0,
+            'customers' => class_exists($customerModel) ? $customerModel::count() : 0,
+        ];
+
+        $salesSeries = class_exists($saleModel)
+            ? $saleModel::selectRaw('DATE(created_at) as day, SUM(grand_total) as total')
+                ->whereDate('created_at', '>=', $from)
+                ->groupBy('day')
+                ->orderBy('day')
+                ->get()
+            : collect();
+
+        $salesChart = [
+            'labels' => $salesSeries->pluck('day')->toArray(),
+            'data' => $salesSeries->pluck('total')->map(fn ($v) => (float) $v)->toArray(),
+        ];
+
+        $contractSeries = class_exists($contractModel)
+            ? $contractModel::selectRaw('status, COUNT(*) as total')
+                ->groupBy('status')
+                ->orderBy('status')
+                ->get()
+            : collect();
+
+        $contractsChart = [
+            'labels' => $contractSeries->pluck('status')->toArray(),
+            'data' => $contractSeries->pluck('total')->map(fn ($v) => (int) $v)->toArray(),
+        ];
+    @endphp
+
+    <div class="grid gap-4 md:grid-cols-4">
+        <div class="erp-card p-4 rounded-2xl">
+            <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Sales (total)
+            </h3>
+            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">
+                {{ number_format($salesStats['total'] ?? 0, 2) }}
+            </p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Today:
+                <span class="font-semibold text-emerald-600 dark:text-emerald-400">
+                    {{ number_format($salesStats['today'] ?? 0, 2) }}
+                </span>
+            </p>
+        </div>
+
+        <div class="erp-card p-4 rounded-2xl">
+            <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                HRM
+            </h3>
+            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">
+                {{ $hrStats['employees'] ?? 0 }} employees
+            </p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Attendance today:
+                <span class="font-semibold text-emerald-600 dark:text-emerald-400">
+                    {{ $hrStats['today_attendance'] ?? 0 }}
+                </span>
+            </p>
+        </div>
+
+        <div class="erp-card p-4 rounded-2xl">
+            <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Rentals
+            </h3>
+            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">
+                {{ $rentalStats['units'] ?? 0 }} units
+            </p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Active contracts:
+                <span class="font-semibold text-emerald-600 dark:text-emerald-400">
+                    {{ $rentalStats['active_contracts'] ?? 0 }}
+                </span>
+            </p>
+        </div>
+
+        <div class="erp-card p-4 rounded-2xl">
+            <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Meta
+            </h3>
+            <p class="mt-2 text-2xl font-semibold text-slate-900 dark:text-slate-50">
+                {{ $metaStats['branches'] ?? 0 }} branches
+            </p>
+            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Customers:
+                <span class="font-semibold text-emerald-600 dark:text-emerald-400">
+                    {{ $metaStats['customers'] ?? 0 }}
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+        <div class="erp-card p-4 rounded-2xl">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                    Sales (last 14 days)
+                </h2>
+            </div>
+            <div wire:ignore>
+                <canvas id="systemSalesChart" class="w-full h-48"></canvas>
+            </div>
+        </div>
+
+        <div class="erp-card p-4 rounded-2xl">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                    Contracts by status
+                </h2>
+            </div>
+            <div wire:ignore>
+                <canvas id="systemContractsChart" class="w-full h-48"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid gap-6 md:grid-cols-2">
+        <div class="erp-card p-4 rounded-2xl">
+            <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50 mb-3">
+                Latest sales
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="border-b border-slate-200/80 dark:border-slate-700/80 text-left text-xs uppercase text-slate-500 dark:text-slate-400">
+                        <tr>
+                            <th class="py-2 pr-4">Code</th>
+                            <th class="py-2 pr-4">Customer</th>
+                            <th class="py-2 pr-4">Grand total</th>
+                            <th class="py-2 pr-4">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
+                        @php
+                            $saleModel = '\\App\\Models\\Sale';
+                            $latestSales = class_exists($saleModel)
+                                ? $saleModel::with('customer')->orderByDesc('created_at')->limit(8)->get()
+                                : collect();
+                        @endphp
+                        @forelse($latestSales as $sale)
+                            <tr class="erp-pos-row">
+                                <td class="py-2 pr-4">
+                                    {{ $sale->code ?? ('#'.$sale->id) }}
+                                </td>
+                                <td class="py-2 pr-4">
+                                    {{ optional($sale->customer)->name ?? '—' }}
+                                </td>
+                                <td class="py-2 pr-4">
+                                    {{ number_format($sale->grand_total ?? 0, 2) }}
+                                </td>
+                                <td class="py-2 pr-4">
+                                    {{ $sale->created_at }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="py-4 text-center text-sm text-slate-500 dark:text-slate-400">
+                                    No sales found.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="erp-card p-4 rounded-2xl">
+            <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50 mb-3">
+                Contracts expiring soon
+            </h2>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="border-b border-slate-200/80 dark:border-slate-700/80 text-left text-xs uppercase text-slate-500 dark:text-slate-400">
+                        <tr>
+                            <th class="py-2 pr-4">Unit</th>
+                            <th class="py-2 pr-4">Tenant</th>
+                            <th class="py-2 pr-4">End date</th>
+                            <th class="py-2 pr-4">Rent</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
+                        @php
+                            $contractModel = '\\App\\Models\\RentalContract';
+                            $soon = class_exists($contractModel)
+                                ? $contractModel::with(['unit','tenant'])
+                                    ->where('status','active')
+                                    ->whereDate('end_date','<=', now()->addDays(30)->toDateString())
+                                    ->orderBy('end_date')
+                                    ->limit(8)
+                                    ->get()
+                                : collect();
+                        @endphp
+                        @forelse($soon as $contract)
+                            <tr class="erp-pos-row">
+                                <td class="py-2 pr-4">
+                                    {{ optional($contract->unit)->code ?? '—' }}
+                                </td>
+                                <td class="py-2 pr-4">
+                                    {{ optional($contract->tenant)->name ?? '—' }}
+                                </td>
+                                <td class="py-2 pr-4">
+                                    {{ $contract->end_date }}
+                                </td>
+                                <td class="py-2 pr-4">
+                                    {{ number_format($contract->rent ?? 0, 2) }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="py-4 text-center text-sm text-slate-500 dark:text-slate-400">
+                                    No expiring contracts.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const salesCtx = document.getElementById('systemSalesChart')?.getContext('2d');
+            const contractsCtx = document.getElementById('systemContractsChart')?.getContext('2d');
+
+            const salesData = @json($salesChart);
+            const contractsData = @json($contractsChart);
+
+            if (salesCtx && salesData.labels && salesData.labels.length) {
+                new Chart(salesCtx, {
+                    type: 'line',
+                    data: {
+                        labels: salesData.labels,
+                        datasets: [{
+                            label: 'Sales',
+                            data: salesData.data,
+                            tension: 0.35,
+                            fill: true,
+                            borderWidth: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+
+            if (contractsCtx && contractsData.labels && contractsData.labels.length) {
+                new Chart(contractsCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: contractsData.labels,
+                        datasets: [{
+                            data: contractsData.data,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            }
+        });
+    </script>
+@endpush

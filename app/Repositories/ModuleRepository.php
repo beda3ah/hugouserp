@@ -1,0 +1,106 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Repositories;
+
+use App\Models\Module;
+use App\Repositories\Contracts\ModuleRepositoryInterface;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+
+class ModuleRepository extends EloquentBaseRepository implements ModuleRepositoryInterface
+{
+    public function __construct(Module $model)
+    {
+        parent::__construct($model);
+    }
+
+    public function findBySlug(string $slug): ?Module
+    {
+        return $this->query()->where('slug', $slug)->first();
+    }
+
+    public function findByCode(string $code): ?Module
+    {
+        return $this->query()->where('code', $code)->first();
+    }
+
+    public function getActiveModules(): Collection
+    {
+        return $this->query()->where('is_active', true)->orderBy('name')->get();
+    }
+
+    public function getModulesForBranch(int $branchId): Collection
+    {
+        return $this->query()
+            ->whereHas('branches', fn($q) => $q->where('branches.id', $branchId))
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function paginateWithFilters(array $filters = [], int $perPage = 20): LengthAwarePaginator
+    {
+        $query = $this->query()->with('branches');
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function (Builder $q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('slug', 'ilike', "%{$search}%")
+                    ->orWhere('code', 'ilike', "%{$search}%");
+            });
+        }
+
+        if (isset($filters['is_active'])) {
+            $query->where('is_active', $filters['is_active']);
+        }
+
+        $sortField = $filters['sort_field'] ?? 'name';
+        $sortDirection = $filters['sort_direction'] ?? 'asc';
+        $query->orderBy($sortField, $sortDirection);
+
+        return $query->paginate($perPage);
+    }
+
+    public function getModuleWithFields(int $moduleId): ?Module
+    {
+        return $this->query()
+            ->with('fields')
+            ->find($moduleId);
+    }
+
+    public function syncBranches(Module $module, array $branchIds): Module
+    {
+        $module->branches()->sync($branchIds);
+        return $module->fresh(['branches']);
+    }
+
+    public function deactivate(Module $module): Module
+    {
+        $module->is_active = false;
+        $module->save();
+        return $module;
+    }
+
+    public function activate(Module $module): Module
+    {
+        $module->is_active = true;
+        $module->save();
+        return $module;
+    }
+
+    public function getModulePermissions(Module $module): array
+    {
+        $basePermissions = ['view', 'create', 'edit', 'delete'];
+        $permissions = [];
+        
+        foreach ($basePermissions as $action) {
+            $permissions[] = "{$module->slug}.{$action}";
+        }
+        
+        return $permissions;
+    }
+}

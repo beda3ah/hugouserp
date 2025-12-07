@@ -1,0 +1,186 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
+
+class RolesAndPermissionsSeeder extends Seeder
+{
+    public function run(): void
+    {
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        $apiPermissions = [
+            'branches.create',
+            'branches.update',
+            'customers.create',
+            'customers.update',
+            'impersonate.users',
+            'motorcycle.vehicles.create',
+            'motorcycle.vehicles.update',
+            'motorcycle.warranties.create',
+            'motorcycle.warranties.update',
+            'products.create',
+            'products.image.upload',
+            'products.import',
+            'products.update',
+            'purchases.approve',
+            'purchases.cancel',
+            'purchases.create',
+            'purchases.receive',
+            'purchases.update',
+            'rental.contracts.create',
+            'rental.contracts.update',
+            'rental.invoices.collect',
+            'rental.properties.create',
+            'rental.properties.update',
+            'rental.tenants.create',
+            'rental.tenants.update',
+            'rental.units.create',
+            'rental.units.status',
+            'rental.units.update',
+            'sales.return',
+            'sales.void',
+            'spares.compatibility.update',
+            'stock.adjust',
+            'stock.transfer',
+            'suppliers.create',
+            'suppliers.update',
+            'warehouses.create',
+            'warehouses.update',
+            'wood.conversions.create',
+            'wood.conversions.update',
+            'wood.waste.create',
+            'pos.use',
+            'pos.session.manage',
+            'pos.daily-report.view',
+        ];
+
+        foreach ($apiPermissions as $name) {
+            Permission::findOrCreate($name, 'api');
+        }
+
+        $superAdminApi = Role::findOrCreate('Super Admin', 'api');
+        $superAdminApi->syncPermissions(Permission::where('guard_name', 'api')->get());
+
+        $webPermissions = [
+            'dashboard.view',
+            'pos.use',
+            'users.manage',
+            'branches.view',
+            'settings.view',
+            'settings.branch',
+            'settings.translations.manage',
+            'inventory.products.view',
+            'pos.offline.report.view',
+            'logs.audit.view',
+            'system.view-notifications',
+            'hr.view-reports',
+            'hr.manage-employees',
+            'hrm.employees.view',
+            'hrm.employees.assign',
+            'hrm.attendance.view',
+            'hrm.payroll.view',
+            'hrm.payroll.run',
+            'rental.view-reports',
+            'rental.manage-units',
+            'rental.manage-tenants',
+            'rental.manage-contracts',
+            'rental.units.view',
+            'rental.units.manage',
+            'rental.contracts.view',
+            'rental.contracts.manage',
+            'customers.view',
+            'customers.manage',
+            'suppliers.view',
+            'suppliers.manage',
+            'sales.view',
+            'sales.manage',
+            'purchases.view',
+            'purchases.manage',
+            'expenses.view',
+            'expenses.manage',
+            'income.view',
+            'income.manage',
+            'accounting.view',
+            'accounting.manage',
+            'warehouse.view',
+            'warehouse.manage',
+            'roles.manage',
+            'modules.manage',
+            'reports.hub.view',
+            'reports.pos.charts',
+            'reports.inventory.charts',
+            'reports.scheduled.manage',
+            'reports.templates.manage',
+            'reports.pos.export',
+            'reports.inventory.export',
+            'store.reports.dashboard',
+            'reports.view',
+            'reports.aggregate',
+            'reports.export',
+            'reports.module.view',
+            'branch.admin.manage',
+            'branch.users.manage',
+            'pos.daily-report.view',
+            'pos.session.manage',
+            'settings.currency.manage',
+            'inventory.stock.alerts.view',
+            'customers.loyalty.manage',
+            'sales.installments.view',
+            'logs.login.view',
+            'rentals.view',
+            'reports.sales.view',
+            'spares.compatibility.manage',
+            'spares.vehicle-models.view',
+        ];
+
+        foreach ($webPermissions as $name) {
+            Permission::findOrCreate($name, 'web');
+        }
+
+        $superAdminWeb = Role::findOrCreate('Super Admin', 'web');
+        $superAdminWeb->syncPermissions(Permission::where('guard_name', 'web')->get());
+
+        $hrManager = Role::findOrCreate('HR Manager', 'web');
+        $hrManager->syncPermissions(Permission::where('guard_name', 'web')->whereIn('name', [
+            'hr.view-reports',
+            'hr.manage-employees',
+            'hrm.employees.view',
+            'hrm.employees.assign',
+            'hrm.attendance.view',
+            'hrm.payroll.view',
+            'hrm.payroll.run',
+        ])->get());
+
+        $rentalManager = Role::findOrCreate('Rental Manager', 'web');
+        $rentalManager->syncPermissions(Permission::where('guard_name', 'web')->whereIn('name', [
+            'rental.view-reports',
+            'rental.manage-units',
+            'rental.manage-tenants',
+            'rental.manage-contracts',
+            'rental.units.view',
+            'rental.units.manage',
+            'rental.contracts.view',
+            'rental.contracts.manage',
+        ])->get());
+
+        $inventoryManager = Role::findOrCreate('Inventory Manager', 'web');
+        $inventoryManager->syncPermissions(Permission::where('guard_name', 'web')->whereIn('name', [
+            'inventory.products.view',
+            'pos.offline.report.view',
+        ])->get());
+
+        $posCashier = Role::findOrCreate('POS Cashier', 'web');
+        $posCashier->syncPermissions(Permission::where('guard_name', 'web')->whereIn('name', [
+            'pos.use',
+            'pos.daily-report.view',
+            'pos.session.manage',
+        ])->get());
+    }
+}

@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class StoreOrder extends Model
+{
+    use HasFactory;
+
+    /**
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'external_order_id',
+        'status',
+        'branch_id',
+        'currency',
+        'total',
+        'discount_total',
+        'shipping_total',
+        'tax_total',
+        'payload',
+    ];
+
+    /**
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'payload' => 'array',
+    ];
+
+    public function sale()
+    {
+        return $this->hasOne(Sale::class);
+    }
+
+    public function getSourceAttribute(): ?string
+    {
+        $payload = $this->payload;
+
+        if (! is_array($payload)) {
+            return null;
+        }
+
+        $meta = $payload['meta'] ?? null;
+
+        if (! is_array($meta)) {
+            return null;
+        }
+
+        $source = $meta['source'] ?? null;
+
+        return is_string($source) ? $source : null;
+    }
+}

@@ -1,0 +1,145 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\AuditLog;
+use App\Models\BranchModule;
+use App\Models\Module;
+use App\Models\User;
+use App\Models\Warehouse;
+
+class Branch extends BaseModel
+{
+
+    protected $table = 'branches';
+
+    protected $fillable = [
+        'name',
+        'code',
+        'is_active',
+        'address',
+        'phone',
+        'timezone',
+        'currency',
+        'is_main',
+        'settings',
+    ];
+
+    protected $casts = [
+        'is_active' => 'bool',
+        'is_main'   => 'bool',
+        'settings'  => 'array',
+    ];
+
+    public function warehouses(): HasMany
+    {
+        return $this->hasMany(Warehouse::class);
+    }
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'branch_user')->withTimestamps();
+    }
+
+    public function modules(): BelongsToMany
+    {
+        return $this->belongsToMany(Module::class, 'branch_modules')
+            ->using(BranchModule::class)
+            ->withPivot(['enabled', 'settings', 'module_key'])
+            ->withTimestamps();
+    }
+
+    public function branchModules(): HasMany
+    {
+        return $this->hasMany(BranchModule::class);
+    }
+
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AuditLog::class);
+    }
+
+    public function branchAdmins(): HasMany
+    {
+        return $this->hasMany(BranchAdmin::class);
+    }
+
+    public function admins(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'branch_admins')
+            ->withPivot(['can_manage_users', 'can_manage_roles', 'can_view_reports', 'can_export_data', 'can_manage_settings', 'is_primary', 'is_active'])
+            ->withTimestamps();
+    }
+
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    public function priceTiers(): HasMany
+    {
+        return $this->hasMany(ProductPriceTier::class);
+    }
+
+    public function moduleSettings(): HasMany
+    {
+        return $this->hasMany(ModuleSetting::class);
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(Branch::class, 'parent_id');
+    }
+
+    public function scopeActive($q)
+    {
+        return $q->where('is_active', true);
+    }
+
+    public function enabledModules()
+    {
+        return $this->modules()->wherePivot('enabled', true);
+    }
+
+    public function hasModule(string $moduleKey): bool
+    {
+        return $this->modules()
+            ->wherePivot('enabled', true)
+            ->where('key', $moduleKey)
+            ->exists();
+    }
+
+    public function getPrimaryAdmin(): ?User
+    {
+        return $this->admins()
+            ->wherePivot('is_primary', true)
+            ->wherePivot('is_active', true)
+            ->first();
+    }
+
+    public function isAdminUser(User $user): bool
+    {
+        return $this->branchAdmins()
+            ->where('user_id', $user->id)
+            ->where('is_active', true)
+            ->exists();
+    }
+
+    public function getModuleSetting(int $moduleId, string $key, $default = null)
+    {
+        return ModuleSetting::getValue($moduleId, $key, $this->id, $default);
+    }
+}

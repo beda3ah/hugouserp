@@ -1,0 +1,374 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services;
+
+use App\Models\ExportLayout;
+use App\Models\User;
+use App\Traits\HandlesServiceErrors;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Writer\Csv;
+
+class ExportService
+{
+    use HandlesServiceErrors;
+
+    public function getAvailableColumns(string $entityType): array
+    {
+        return match ($entityType) {
+            'products' => [
+                'id' => 'ID',
+                'code' => __('Code'),
+                'name' => __('Name'),
+                'sku' => __('SKU'),
+                'barcode' => __('Barcode'),
+                'type' => __('Type'),
+                'standard_cost' => __('Cost Price'),
+                'default_price' => __('Sell Price'),
+                'min_stock' => __('Min Stock'),
+                'status' => __('Status'),
+                'module_name' => __('Module'),
+                'branch_name' => __('Branch'),
+                'created_at' => __('Created At'),
+            ],
+            'sales' => [
+                'id' => 'ID',
+                'reference' => __('Reference'),
+                'sale_date' => __('Date'),
+                'customer_name' => __('Customer'),
+                'grand_total' => __('Total'),
+                'amount_paid' => __('Paid'),
+                'amount_due' => __('Due'),
+                'status' => __('Status'),
+                'branch_name' => __('Branch'),
+                'created_at' => __('Created At'),
+            ],
+            'purchases' => [
+                'id' => 'ID',
+                'reference' => __('Reference'),
+                'purchase_date' => __('Date'),
+                'supplier_name' => __('Supplier'),
+                'grand_total' => __('Total'),
+                'amount_paid' => __('Paid'),
+                'amount_due' => __('Due'),
+                'status' => __('Status'),
+                'branch_name' => __('Branch'),
+                'created_at' => __('Created At'),
+            ],
+            'customers' => [
+                'id' => 'ID',
+                'name' => __('Name'),
+                'email' => __('Email'),
+                'phone' => __('Phone'),
+                'address' => __('Address'),
+                'balance' => __('Balance'),
+                'created_at' => __('Created At'),
+            ],
+            'suppliers' => [
+                'id' => 'ID',
+                'name' => __('Name'),
+                'email' => __('Email'),
+                'phone' => __('Phone'),
+                'address' => __('Address'),
+                'balance' => __('Balance'),
+                'created_at' => __('Created At'),
+            ],
+            'expenses' => [
+                'id' => 'ID',
+                'expense_date' => __('Date'),
+                'category_name' => __('Category'),
+                'description' => __('Description'),
+                'amount' => __('Amount'),
+                'branch_name' => __('Branch'),
+                'created_at' => __('Created At'),
+            ],
+            'incomes' => [
+                'id' => 'ID',
+                'income_date' => __('Date'),
+                'category_name' => __('Category'),
+                'description' => __('Description'),
+                'amount' => __('Amount'),
+                'branch_name' => __('Branch'),
+                'created_at' => __('Created At'),
+            ],
+            default => [],
+        };
+    }
+
+    public function getUserLayouts(int $userId, ?string $entityType = null): Collection
+    {
+        return $this->handleServiceOperation(
+            callback: function () use ($userId, $entityType) {
+                $query = ExportLayout::forUser($userId);
+
+                if ($entityType) {
+                    $query->forEntity($entityType);
+                }
+
+                return $query->orderBy('layout_name')->get();
+            },
+            operation: 'getUserLayouts',
+            context: ['user_id' => $userId, 'entity_type' => $entityType]
+        );
+    }
+
+    public function getDefaultLayout(int $userId, string $entityType): ?ExportLayout
+    {
+        return $this->handleServiceOperation(
+            callback: fn () => ExportLayout::forUser($userId)
+                ->forEntity($entityType)
+                ->default()
+                ->first(),
+            operation: 'getDefaultLayout',
+            context: ['user_id' => $userId, 'entity_type' => $entityType],
+            defaultValue: null
+        );
+    }
+
+    public function saveLayout(int $userId, string $entityType, array $data): ExportLayout
+    {
+        return $this->handleServiceOperation(
+            callback: function () use ($userId, $entityType, $data) {
+                if ($data['is_default'] ?? false) {
+                    ExportLayout::where('user_id', $userId)
+                        ->where('entity_type', $entityType)
+                        ->update(['is_default' => false]);
+                }
+
+                return ExportLayout::updateOrCreate(
+                    [
+                        'user_id' => $userId,
+                        'entity_type' => $entityType,
+                        'layout_name' => $data['layout_name'],
+                    ],
+                    [
+                        'selected_columns' => $data['selected_columns'],
+                        'column_order' => $data['column_order'] ?? null,
+                        'column_labels' => $data['column_labels'] ?? null,
+                        'export_format' => $data['export_format'] ?? 'xlsx',
+                        'include_headers' => $data['include_headers'] ?? true,
+                        'date_format' => $data['date_format'] ?? 'Y-m-d',
+                        'number_format' => $data['number_format'] ?? null,
+                        'is_default' => $data['is_default'] ?? false,
+                        'is_shared' => $data['is_shared'] ?? false,
+                    ]
+                );
+            },
+            operation: 'saveLayout',
+            context: ['user_id' => $userId, 'entity_type' => $entityType]
+        );
+    }
+
+    public function deleteLayout(int $layoutId, int $userId): bool
+    {
+        return $this->handleServiceOperation(
+            callback: fn () => ExportLayout::where('id', $layoutId)
+                ->where('user_id', $userId)
+                ->delete() > 0,
+            operation: 'deleteLayout',
+            context: ['layout_id' => $layoutId, 'user_id' => $userId],
+            defaultValue: false
+        );
+    }
+
+    public function export(Collection $data, array $columns, string $format = 'xlsx', array $options = []): string
+    {
+        return $this->handleServiceOperation(
+            callback: function () use ($data, $columns, $format, $options) {
+                $availableColumns = $options['available_columns'] ?? [];
+                $dateFormat = $options['date_format'] ?? 'Y-m-d';
+                $includeHeaders = $options['include_headers'] ?? true;
+                $filename = $options['filename'] ?? 'export_' . date('Y-m-d_His');
+
+                $rows = $this->prepareDataRows($data, $columns, $availableColumns, $dateFormat);
+
+                return match ($format) {
+                    'xlsx' => $this->exportToExcel($rows, $columns, $availableColumns, $includeHeaders, $filename),
+                    'csv' => $this->exportToCsv($rows, $columns, $availableColumns, $includeHeaders, $filename),
+                    'pdf' => $this->exportToPdf($rows, $columns, $availableColumns, $includeHeaders, $filename, $options),
+                    default => $this->exportToExcel($rows, $columns, $availableColumns, $includeHeaders, $filename),
+                };
+            },
+            operation: 'export',
+            context: ['format' => $format, 'columns_count' => count($columns), 'data_count' => $data->count()]
+        );
+    }
+
+    protected function prepareDataRows(Collection $data, array $columns, array $availableColumns, string $dateFormat): array
+    {
+        return $data->map(function ($item) use ($columns, $dateFormat) {
+            $row = [];
+            $itemArray = is_object($item) ? (array) $item : $item;
+            
+            foreach ($columns as $column) {
+                $value = $itemArray[$column] ?? '';
+                
+                if ($value instanceof \DateTime || $value instanceof \Carbon\Carbon) {
+                    $value = $value->format($dateFormat);
+                } elseif (is_array($value)) {
+                    $value = json_encode($value);
+                }
+                
+                $row[$column] = $value;
+            }
+            
+            return $row;
+        })->toArray();
+    }
+
+    protected function exportToExcel(array $rows, array $columns, array $availableColumns, bool $includeHeaders, string $filename): string
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $rowIndex = 1;
+
+        if ($includeHeaders) {
+            $colIndex = 1;
+            foreach ($columns as $column) {
+                $label = $availableColumns[$column] ?? $column;
+                $sheet->setCellValueByColumnAndRow($colIndex, $rowIndex, $label);
+                $colIndex++;
+            }
+            $rowIndex++;
+        }
+
+        foreach ($rows as $row) {
+            $colIndex = 1;
+            foreach ($columns as $column) {
+                $sheet->setCellValueByColumnAndRow($colIndex, $rowIndex, $row[$column] ?? '');
+                $colIndex++;
+            }
+            $rowIndex++;
+        }
+
+        $filepath = storage_path("app/exports/{$filename}.xlsx");
+        
+        if (!is_dir(dirname($filepath))) {
+            mkdir(dirname($filepath), 0755, true);
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($filepath);
+
+        return $filepath;
+    }
+
+    protected function exportToCsv(array $rows, array $columns, array $availableColumns, bool $includeHeaders, string $filename): string
+    {
+        $filepath = storage_path("app/exports/{$filename}.csv");
+        
+        if (!is_dir(dirname($filepath))) {
+            mkdir(dirname($filepath), 0755, true);
+        }
+
+        $handle = fopen($filepath, 'w');
+        
+        fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF));
+
+        if ($includeHeaders) {
+            $headers = array_map(fn($col) => $availableColumns[$col] ?? $col, $columns);
+            fputcsv($handle, $headers);
+        }
+
+        foreach ($rows as $row) {
+            $rowData = array_map(fn($col) => $row[$col] ?? '', $columns);
+            fputcsv($handle, $rowData);
+        }
+
+        fclose($handle);
+
+        return $filepath;
+    }
+
+    protected function exportToPdf(array $rows, array $columns, array $availableColumns, bool $includeHeaders, string $filename, array $options): string
+    {
+        $html = '<html dir="' . (app()->getLocale() === 'ar' ? 'rtl' : 'ltr') . '"><head><meta charset="UTF-8">';
+        $html .= '<style>
+            body { font-family: DejaVu Sans, sans-serif; font-size: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+            th { background-color: #10b981; color: white; font-weight: bold; }
+            tr:nth-child(even) { background-color: #f9f9f9; }
+            h1 { color: #10b981; font-size: 18px; }
+        </style></head><body>';
+
+        if (!empty($options['title'])) {
+            $html .= '<h1>' . htmlspecialchars($options['title']) . '</h1>';
+        }
+
+        $html .= '<table><thead><tr>';
+        
+        if ($includeHeaders) {
+            foreach ($columns as $column) {
+                $label = $availableColumns[$column] ?? $column;
+                $html .= '<th>' . htmlspecialchars($label) . '</th>';
+            }
+        }
+        
+        $html .= '</tr></thead><tbody>';
+
+        foreach ($rows as $row) {
+            $html .= '<tr>';
+            foreach ($columns as $column) {
+                $html .= '<td>' . htmlspecialchars($row[$column] ?? '') . '</td>';
+            }
+            $html .= '</tr>';
+        }
+
+        $html .= '</tbody></table></body></html>';
+
+        $filepath = storage_path("app/exports/{$filename}.pdf");
+        
+        if (!is_dir(dirname($filepath))) {
+            mkdir(dirname($filepath), 0755, true);
+        }
+
+        if (class_exists(\Dompdf\Dompdf::class)) {
+            $dompdf = new \Dompdf\Dompdf();
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'landscape');
+            $dompdf->render();
+            file_put_contents($filepath, $dompdf->output());
+        } else {
+            file_put_contents($filepath, $html);
+            $filepath = str_replace('.pdf', '.html', $filepath);
+        }
+
+        return $filepath;
+    }
+
+    public function downloadAndCleanup(string $filepath): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $filename = basename($filepath);
+        
+        return response()->download($filepath, $filename)->deleteFileAfterSend(true);
+    }
+
+    public function exportWithLayout(Collection $data, ExportLayout $layout, array $options = []): string
+    {
+        return $this->handleServiceOperation(
+            callback: function () use ($data, $layout, $options) {
+                $columns = $layout->getOrderedColumns();
+                $availableColumns = $this->getAvailableColumns($layout->entity_type);
+                
+                if (!empty($layout->column_labels)) {
+                    $availableColumns = array_merge($availableColumns, $layout->column_labels);
+                }
+
+                return $this->export($data, $columns, $layout->export_format, array_merge($options, [
+                    'available_columns' => $availableColumns,
+                    'date_format' => $layout->date_format,
+                    'include_headers' => $layout->include_headers,
+                ]));
+            },
+            operation: 'exportWithLayout',
+            context: ['layout_id' => $layout->id, 'entity_type' => $layout->entity_type]
+        );
+    }
+}
