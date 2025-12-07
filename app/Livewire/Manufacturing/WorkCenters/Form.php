@@ -52,13 +52,12 @@ class Form extends Component
 
     public function mount(?WorkCenter $workCenter = null): void
     {
+        $this->authorize('manufacturing.create');
+
         if ($workCenter && $workCenter->exists) {
-            $this->authorize('update', $workCenter);
             $this->workCenter = $workCenter;
             $this->editMode = true;
             $this->fillFormFromModel();
-        } else {
-            $this->authorize('create', WorkCenter::class);
         }
     }
 

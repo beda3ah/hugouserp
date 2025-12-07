@@ -56,13 +56,12 @@ class Form extends Component
 
     public function mount(?ProductionOrder $productionOrder = null): void
     {
+        $this->authorize('manufacturing.create');
+
         if ($productionOrder && $productionOrder->exists) {
-            $this->authorize('update', $productionOrder);
             $this->productionOrder = $productionOrder;
             $this->editMode = true;
             $this->fillFormFromModel();
-        } else {
-            $this->authorize('create', ProductionOrder::class);
         }
     }
 
