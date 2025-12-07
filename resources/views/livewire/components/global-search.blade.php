@@ -121,7 +121,7 @@
                 </div>
                 @foreach($recentSearches as $recentQuery)
                     <button 
-                        wire:click="useRecentSearch('{{ $recentQuery }}')"
+                        wire:click="useRecentSearch(@js($recentQuery))"
                         class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                     >
                         <div class="flex items-center gap-2">

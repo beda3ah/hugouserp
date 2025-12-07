@@ -29,9 +29,16 @@ return new class extends Migration
             
             $table->index(['branch_id', 'searchable_type']);
             $table->index('module');
-            $table->fullText(['title', 'content']);
-            $table->unique(['searchable_type', 'searchable_id']);
+            $table->index(['title', 'content']); // Regular index as fallback
+            $table->unique(['searchable_type', 'searchable_id', 'branch_id'], 'search_index_unique');
         });
+
+        // Add fulltext index if database supports it (MySQL/PostgreSQL)
+        if (in_array(config('database.default'), ['mysql', 'pgsql'])) {
+            Schema::table('search_index', function (Blueprint $table) {
+                $table->fullText(['title', 'content']);
+            });
+        }
 
         // Search history for user
         Schema::create('search_history', function (Blueprint $table) {

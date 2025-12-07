@@ -247,15 +247,26 @@ class DashboardService
 
     /**
      * Generate widget data based on widget type.
+     * 
+     * TODO: Implement specific widget data generators for each widget type.
+     * Each widget should have its own data generation logic based on widget->key.
      */
     private function generateWidgetData(DashboardWidget $widget, int $userId, ?int $branchId): array
     {
-        // This would call specific widget data generators
-        // For now, return empty structure
+        // TODO: Add widget-specific data generation
+        // Example structure:
+        // match ($widget->key) {
+        //     'sales_chart' => $this->generateSalesChartData($userId, $branchId),
+        //     'inventory_summary' => $this->generateInventorySummaryData($userId, $branchId),
+        //     default => ['message' => 'Widget data generator not implemented']
+        // }
+        
         return [
             'widget_id' => $widget->id,
             'widget_key' => $widget->key,
-            'data' => [],
+            'data' => [
+                'message' => 'Widget data generator pending implementation for: ' . $widget->key,
+            ],
             'generated_at' => now()->toISOString(),
         ];
     }
