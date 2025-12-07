@@ -67,6 +67,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'fixed-assets.update',
             'fixed-assets.delete',
             'fixed-assets.depreciate',
+            'banking.create',
+            'banking.update',
+            'banking.delete',
+            'banking.reconcile',
         ];
 
         foreach ($apiPermissions as $name) {
@@ -156,6 +160,11 @@ class RolesAndPermissionsSeeder extends Seeder
             'fixed-assets.edit',
             'fixed-assets.delete',
             'fixed-assets.depreciate',
+            'banking.view',
+            'banking.create',
+            'banking.edit',
+            'banking.delete',
+            'banking.reconcile',
         ];
 
         foreach ($webPermissions as $name) {
