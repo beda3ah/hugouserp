@@ -71,6 +71,12 @@ class RolesAndPermissionsSeeder extends Seeder
             'banking.update',
             'banking.delete',
             'banking.reconcile',
+            'purchases.requisitions.create',
+            'purchases.requisitions.approve',
+            'purchases.quotations.create',
+            'purchases.quotations.accept',
+            'purchases.grn.create',
+            'purchases.grn.approve',
         ];
 
         foreach ($apiPermissions as $name) {
@@ -167,6 +173,15 @@ class RolesAndPermissionsSeeder extends Seeder
             'banking.edit',
             'banking.delete',
             'banking.reconcile',
+            'purchases.requisitions.view',
+            'purchases.requisitions.create',
+            'purchases.requisitions.approve',
+            'purchases.quotations.view',
+            'purchases.quotations.create',
+            'purchases.quotations.accept',
+            'purchases.grn.view',
+            'purchases.grn.create',
+            'purchases.grn.approve',
         ];
 
         foreach ($webPermissions as $name) {
