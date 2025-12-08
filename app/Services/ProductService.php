@@ -226,7 +226,7 @@ class ProductService implements ProductServiceInterface
      * @return Product
      * @throws \Exception If module doesn't support items
      */
-    public function createProductForModule(\App\Models\Module $module, array $data, $thumbnail = null): Product
+    public function createProductForModule(\App\Models\Module $module, array $data, ?\Illuminate\Http\UploadedFile $thumbnail = null): Product
     {
         return $this->handleServiceOperation(
             callback: function () use ($module, $data, $thumbnail) {
@@ -297,7 +297,7 @@ class ProductService implements ProductServiceInterface
      * @param \Illuminate\Http\UploadedFile|null $thumbnail Optional new thumbnail file
      * @return Product
      */
-    public function updateProductForModule(Product $product, array $data, $thumbnail = null): Product
+    public function updateProductForModule(Product $product, array $data, ?\Illuminate\Http\UploadedFile $thumbnail = null): Product
     {
         return $this->handleServiceOperation(
             callback: function () use ($product, $data, $thumbnail) {

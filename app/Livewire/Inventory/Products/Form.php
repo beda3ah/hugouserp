@@ -9,6 +9,7 @@ use App\Models\Module;
 use App\Models\Product;
 use App\Models\ProductFieldValue;
 use App\Services\ModuleProductService;
+use App\Services\ProductService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -58,9 +59,9 @@ class Form extends Component
     public array $dynamicData = [];
 
     protected ModuleProductService $moduleProductService;
-    protected \App\Services\ProductService $productService;
+    protected ProductService $productService;
 
-    public function boot(ModuleProductService $moduleProductService, \App\Services\ProductService $productService): void
+    public function boot(ModuleProductService $moduleProductService, ProductService $productService): void
     {
         $this->moduleProductService = $moduleProductService;
         $this->productService = $productService;
