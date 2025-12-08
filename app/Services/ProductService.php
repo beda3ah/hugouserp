@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Product;
+use App\Models\ProductFieldValue;
+use App\Repositories\Contracts\ProductRepositoryInterface;
 use App\Services\Contracts\ModuleFieldServiceInterface;
 use App\Services\Contracts\ProductServiceInterface;
 use App\Traits\HandlesServiceErrors;
@@ -16,6 +18,7 @@ class ProductService implements ProductServiceInterface
     use HandlesServiceErrors;
 
     public function __construct(
+        protected ProductRepositoryInterface $productRepository,
         protected ModuleFieldServiceInterface $moduleFields,
     ) {}
 
@@ -23,20 +26,7 @@ class ProductService implements ProductServiceInterface
     public function search(string $q = '', int $perPage = 15)
     {
         return $this->handleServiceOperation(
-            callback: function () use ($q, $perPage) {
-                $query = Product::query();
-
-                if ($q !== '') {
-                    $like = '%'.$q.'%';
-                    $query->where(function ($inner) use ($like) {
-                        $inner->where('name', 'like', $like)
-                            ->orWhere('sku', 'like', $like)
-                            ->orWhere('barcode', 'like', $like);
-                    });
-                }
-
-                return $query->orderBy('name')->paginate($perPage);
-            },
+            callback: fn() => $this->productRepository->search($q, $perPage),
             operation: 'search',
             context: ['query' => $q, 'per_page' => $perPage]
         );
@@ -105,7 +95,7 @@ class ProductService implements ProductServiceInterface
 
                         /** @var Product $product */
                         $product = $sku
-                            ? Product::query()->where('sku', $sku)->first() ?? new Product
+                            ? $this->productRepository->findBySku($sku) ?? new Product
                             : new Product;
 
                         if ($sku !== null) {
@@ -178,26 +168,24 @@ class ProductService implements ProductServiceInterface
                 }
                 fputcsv($fh, $header);
 
-                Product::query()
-                    ->orderBy('id')
-                    ->chunk(500, function ($chunk) use ($fh, $dynamicKeys) {
-                        foreach ($chunk as $p) {
-                            $row = [
-                                $p->sku,
-                                $p->name,
-                                $p->price,
-                                $p->cost,
-                                $p->barcode,
-                            ];
+                $this->productRepository->getAllChunked(500, function ($chunk) use ($fh, $dynamicKeys) {
+                    foreach ($chunk as $p) {
+                        $row = [
+                            $p->sku,
+                            $p->name,
+                            $p->price,
+                            $p->cost,
+                            $p->barcode,
+                        ];
 
-                            $attrs = (array) ($p->extra_attributes ?? []);
-                            foreach ($dynamicKeys as $key) {
-                                $row[] = $attrs[$key] ?? null;
-                            }
-
-                            fputcsv($fh, $row);
+                        $attrs = (array) ($p->extra_attributes ?? []);
+                        foreach ($dynamicKeys as $key) {
+                            $row[] = $attrs[$key] ?? null;
                         }
-                    });
+
+                        fputcsv($fh, $row);
+                    }
+                });
 
                 rewind($fh);
                 $content = stream_get_contents($fh);
@@ -242,9 +230,8 @@ class ProductService implements ProductServiceInterface
                     $customFields = $data['custom_fields'] ?? [];
                     unset($data['custom_fields']);
 
-                    // Create the product
-                    $product = new Product();
-                    $product->fill([
+                    // Prepare product data
+                    $productData = [
                         'name' => $data['name'],
                         'sku' => $data['sku'] ?? null,
                         'barcode' => $data['barcode'] ?? null,
@@ -257,14 +244,15 @@ class ProductService implements ProductServiceInterface
                         'branch_id' => $data['branch_id'],
                         'module_id' => $module->id,
                         'created_by' => auth()->id(),
-                    ]);
+                    ];
 
                     // Handle thumbnail upload if provided
                     if ($thumbnail) {
-                        $product->thumbnail = $thumbnail->store('products/thumbnails', 'public');
+                        $productData['thumbnail'] = $thumbnail->store('products/thumbnails', 'public');
                     }
 
-                    $product->save();
+                    // Create product through repository
+                    $product = $this->productRepository->create($productData);
 
                     // Save custom fields if module supports them
                     if ($module->supports_custom_fields && !empty($customFields)) {
@@ -308,8 +296,8 @@ class ProductService implements ProductServiceInterface
                     $customFields = $data['custom_fields'] ?? [];
                     unset($data['custom_fields']);
 
-                    // Update basic fields
-                    $product->fill([
+                    // Prepare update data
+                    $updateData = [
                         'name' => $data['name'] ?? $product->name,
                         'sku' => $data['sku'] ?? $product->sku,
                         'barcode' => $data['barcode'] ?? $product->barcode,
@@ -320,7 +308,7 @@ class ProductService implements ProductServiceInterface
                         'status' => $data['status'] ?? $product->status,
                         'type' => $data['type'] ?? $product->type,
                         'updated_by' => auth()->id(),
-                    ]);
+                    ];
 
                     // Handle thumbnail update
                     if ($thumbnail) {
@@ -328,10 +316,11 @@ class ProductService implements ProductServiceInterface
                         if ($product->thumbnail) {
                             Storage::delete($product->thumbnail);
                         }
-                        $product->thumbnail = $thumbnail->store('products/thumbnails', 'public');
+                        $updateData['thumbnail'] = $thumbnail->store('products/thumbnails', 'public');
                     }
 
-                    $product->save();
+                    // Update product through repository
+                    $product = $this->productRepository->update($product, $updateData);
 
                     // Update custom fields if module supports them
                     if ($product->module && $product->module->supports_custom_fields && !empty($customFields)) {
