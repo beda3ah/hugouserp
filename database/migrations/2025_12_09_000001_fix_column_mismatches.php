@@ -40,7 +40,11 @@ return new class extends Migration
             Schema::table('rental_contracts', function (Blueprint $table) {
                 if (!Schema::hasColumn('rental_contracts', 'rental_period_id')) {
                     $table->unsignedBigInteger('rental_period_id')->nullable()->after('tenant_id');
-                    $table->foreign('rental_period_id')->references('id')->on('rental_periods')->onDelete('set null');
+                    // Only add foreign key if rental_periods table exists
+                    if (Schema::hasTable('rental_periods')) {
+                        $table->foreign('rental_period_id', 'rental_contracts_rental_period_id_foreign')
+                            ->references('id')->on('rental_periods')->onDelete('set null');
+                    }
                 }
                 if (!Schema::hasColumn('rental_contracts', 'custom_days')) {
                     $table->integer('custom_days')->nullable()->after('rental_period_id');
@@ -98,7 +102,12 @@ return new class extends Migration
                     $table->dropColumn('custom_days');
                 }
                 if (Schema::hasColumn('rental_contracts', 'rental_period_id')) {
-                    $table->dropForeign(['rental_period_id']);
+                    // Drop foreign key if it exists (using the named constraint)
+                    try {
+                        $table->dropForeign('rental_contracts_rental_period_id_foreign');
+                    } catch (\Exception $e) {
+                        // Foreign key may not exist, continue
+                    }
                     $table->dropColumn('rental_period_id');
                 }
             });
