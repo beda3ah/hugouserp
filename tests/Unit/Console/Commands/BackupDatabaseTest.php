@@ -81,18 +81,6 @@ class BackupDatabaseTest extends TestCase
             ->with('cmd:system:backup', 1800)
             ->andReturn($mockLock);
 
-        // Create command with mocked service
-        $command = new BackupDatabase($mockBackupService);
-        $command->setLaravel($this->app);
-
-        // Simulate --verify option
-        $this->app['config']->set('console.signature', 'system:backup {--verify}');
-        
-        // We need to manually set the option since we can't run artisan directly
-        // Use reflection to set the option
-        $reflection = new \ReflectionClass($command);
-        $method = $reflection->getMethod('option');
-        
         // Mock the option method to return true for verify
         $command = Mockery::mock(BackupDatabase::class, [$mockBackupService])
             ->makePartial()

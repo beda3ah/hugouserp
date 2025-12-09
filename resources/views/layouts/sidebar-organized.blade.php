@@ -23,6 +23,7 @@
     };
     
     // Check if module is enabled (honors settings overrides, branch-specific config, and config fallbacks)
+    // Returns true if no branch context exists (backward compatible default behavior)
     $moduleEnabled = function($moduleName) {
         $branchId = current_branch_id();
         
