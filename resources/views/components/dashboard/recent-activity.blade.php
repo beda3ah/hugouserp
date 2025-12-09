@@ -1,21 +1,8 @@
 {{-- resources/views/components/dashboard/recent-activity.blade.php --}}
 @props([
+    'activities' => [],
     'limit' => 10,
 ])
-
-@php
-// For now, we'll use a simple activity log structure
-// This can be enhanced with actual ActivityLog model once created
-$activities = collect([]);
-
-// Check if we have an ActivityLog model, otherwise show placeholder
-if (class_exists('\App\Models\ActivityLog')) {
-    $activities = \App\Models\ActivityLog::with('user')
-        ->latest()
-        ->limit($limit)
-        ->get();
-}
-@endphp
 
 <div {{ $attributes->merge(['class' => 'bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6']) }}>
     <div class="flex items-center justify-between mb-4">
@@ -27,7 +14,7 @@ if (class_exists('\App\Models\ActivityLog')) {
         </a>
     </div>
 
-    @if($activities->isEmpty())
+    @if(empty($activities) || count($activities) === 0)
     <div class="text-center py-8">
         <div class="text-4xl mb-2">📋</div>
         <p class="text-sm text-slate-500 dark:text-slate-400">

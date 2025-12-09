@@ -16,6 +16,11 @@ class CommandPalette extends Component
     public string $query = '';
     public int $selectedIndex = 0;
     public array $results = [];
+    
+    /**
+     * Maximum number of results to return
+     */
+    protected int $maxResults = 10;
 
     public function updatedQuery(): void
     {
@@ -100,7 +105,7 @@ class CommandPalette extends Component
             $results = array_merge($results, $sales->toArray());
         }
 
-        return array_slice($results, 0, 10);
+        return array_slice($results, 0, $this->maxResults);
     }
 
     public function selectResult(int $index): void

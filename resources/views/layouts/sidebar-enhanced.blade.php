@@ -557,13 +557,7 @@
     </nav>
 
     {{-- Favorites Section --}}
-    @php
-        $favorites = [];
-        if (class_exists('\App\Models\UserFavorite')) {
-            $favorites = \App\Models\UserFavorite::forUser()->ordered()->limit(5)->get();
-        }
-    @endphp
-    @if(!empty($favorites) && $favorites->count() > 0)
+    @if(isset($userFavorites) && !empty($userFavorites) && count($userFavorites) > 0)
     <div class="border-t border-slate-700 px-3 py-3">
         <div class="flex items-center justify-between mb-2">
             <p class="text-xs uppercase tracking-wide text-slate-500">{{ __('Favorites') }}</p>
@@ -574,7 +568,7 @@
             </button>
         </div>
         <ul class="space-y-1">
-            @foreach($favorites as $favorite)
+            @foreach($userFavorites as $favorite)
             <li>
                 <a href="{{ $favorite->route_name ? route($favorite->route_name) : '#' }}" 
                    class="sidebar-link-secondary group">

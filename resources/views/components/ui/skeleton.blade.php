@@ -44,8 +44,11 @@ $animateClass = $animate ? 'animate-pulse' : '';
 
 @elseif($type === 'text')
 <div {{ $attributes->merge(['class' => 'space-y-3']) }}>
+    @php
+    $widths = [60, 75, 85, 95, 100]; // Predefined widths for consistency
+    @endphp
     @for($i = 0; $i < $rows; $i++)
-    <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded {{ $animateClass }}" style="width: {{ rand(60, 100) }}%;"></div>
+    <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded {{ $animateClass }}" style="width: {{ $widths[$i % count($widths)] }}%;"></div>
     @endfor
 </div>
 
