@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\PurchaseRequisition;
 use App\Models\PurchaseRequisitionItem;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\RedirectResponse;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -118,7 +119,7 @@ class Form extends Component
         }
     }
 
-    public function save(): void
+    public function save(): RedirectResponse
     {
         $this->validate();
 
@@ -167,7 +168,7 @@ class Form extends Component
         return redirect()->route('purchases.requisitions.index');
     }
 
-    public function submit(): void
+    public function submit(): RedirectResponse
     {
         $this->save();
 
