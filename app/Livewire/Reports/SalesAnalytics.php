@@ -179,11 +179,19 @@ class SalesAnalytics extends Component
         $groupBy = $days > 60 ? 'month' : ($days > 14 ? 'week' : 'day');
 
         $driver = DB::getDriverName();
-        $isPostgres = $driver === 'pgsql';
 
+        // Use database-portable date truncation
         $dateFormat = match ($groupBy) {
-            'month' => $isPostgres ? "DATE_TRUNC('month', created_at)" : "DATE_FORMAT(created_at, '%Y-%m-01')",
-            'week' => $isPostgres ? "DATE_TRUNC('week', created_at)" : 'DATE(DATE_SUB(created_at, INTERVAL WEEKDAY(created_at) DAY))',
+            'month' => match ($driver) {
+                'pgsql' => "DATE_TRUNC('month', created_at)",
+                'sqlite' => "DATE(created_at, 'start of month')",
+                default => "DATE_FORMAT(created_at, '%Y-%m-01')", // MySQL, MariaDB
+            },
+            'week' => match ($driver) {
+                'pgsql' => "DATE_TRUNC('week', created_at)",
+                'sqlite' => "DATE(created_at, 'weekday 0', '-7 days')", // Start of week
+                default => 'DATE(DATE_SUB(created_at, INTERVAL WEEKDAY(created_at) DAY))', // MySQL, MariaDB
+            },
             default => 'DATE(created_at)',
         };
 
@@ -310,8 +318,13 @@ class SalesAnalytics extends Component
     protected function loadHourlyDistribution(): void
     {
         $driver = DB::getDriverName();
-        $isPostgres = $driver === 'pgsql';
-        $hourExpr = $isPostgres ? 'EXTRACT(HOUR FROM created_at)::integer' : 'HOUR(created_at)';
+        
+        // Use database-portable hour extraction
+        $hourExpr = match ($driver) {
+            'pgsql' => 'CAST(EXTRACT(HOUR FROM created_at) AS INTEGER)',
+            'sqlite' => "CAST(strftime('%H', created_at) AS INTEGER)",
+            default => 'HOUR(created_at)', // MySQL, MariaDB
+        };
 
         $query = Sale::query()
             ->selectRaw("{$hourExpr} as hour")
