@@ -29,7 +29,7 @@
                                 {{ $transaction->reference_number ?? '-' }}
                             </td>
                             <td class="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                                {{ $transaction->transaction_type }}
+                                {{ $transaction->type }}
                             </td>
                             <td class="px-4 py-3 text-sm text-right text-gray-900 dark:text-white">
                                 {{ number_format($transaction->amount, 2) }}
