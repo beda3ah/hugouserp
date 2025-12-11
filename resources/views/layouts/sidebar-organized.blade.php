@@ -93,7 +93,7 @@
             @endif
             
             @if($canAccess('sales.view'))
-            <a href="{{ route('sales.index') }}"
+            <a href="{{ route('app.sales.index') }}"
                class="sidebar-link-secondary {{ $isActive('sales.index') ? 'active' : '' }}">
                 <span class="text-base">💰</span>
                 <span class="text-sm">{{ __('Sales Orders') }}</span>
@@ -126,7 +126,7 @@
             </div>
             
             @if($canAccess('purchases.view'))
-            <a href="{{ route('purchases.index') }}"
+            <a href="{{ route('app.purchases.index') }}"
                class="sidebar-link-secondary {{ $isActive('purchases.index') ? 'active' : '' }}">
                 <span class="text-base">🛒</span>
                 <span class="text-sm">{{ __('Purchase Orders') }}</span>
@@ -150,7 +150,7 @@
                 <span class="text-xs uppercase tracking-wide text-slate-500 font-semibold">{{ __('Inventory') }}</span>
             </div>
             
-            <a href="{{ route('inventory.products.index') }}"
+            <a href="{{ route('app.inventory.products.index') }}"
                class="sidebar-link-secondary {{ $isActive('inventory.products') ? 'active' : '' }}">
                 <span class="text-base">📦</span>
                 <span class="text-sm">{{ __('Products') }}</span>

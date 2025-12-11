@@ -392,7 +392,7 @@
             </a>
             @endif
             @if($canAccess('inventory.products.view'))
-            <a href="{{ route('inventory.products.create') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md">
+            <a href="{{ route('app.inventory.products.create') }}" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md">
                 <span>📦</span>
                 <span>{{ __('New Product') }}</span>
             </a>
