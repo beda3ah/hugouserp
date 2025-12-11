@@ -96,6 +96,33 @@ This document outlines planned improvements and features for HugousERP, organize
 - Retained only core docs: README, ARCHITECTURE, SECURITY, CONTRIBUTING, CRON_JOBS, CHANGELOG, ROADMAP
 - Kept api-v1-openapi.yaml for API documentation
 
+### Module-by-Module Route & Component Alignment Pass (Phase 5) ✅ (December 2025)
+**Route Unification & Consistency:**
+- Fixed 60+ legacy route references across all modules to use canonical `app.*` or `admin.*` prefixes
+- Updated all Livewire components (Sales, Purchases, Inventory, Warehouse, Manufacturing, Rental, Banking, Accounting, Expenses, Income, HRM, Projects, Documents, Fixed Assets, Helpdesk)
+- Fixed sidebar navigation links in all layout files
+- Fixed quick-add links in forms to use correct routes
+- Verified all 106 app routes load successfully
+
+**Database Portability Enhancements:**
+- Refactored ScheduledReportService to use DatabaseCompatibilityService for DATE operations
+- Improved BankingService aggregate calculations to avoid DB-specific CASE statements
+- Enhanced InventoryController with parameterized stock calculation queries
+- Cleaned up StockAlertService DB::raw usage for better portability
+- All critical DB::raw usages reviewed and optimized
+
+**Form & Component Verification:**
+- Verified all major forms load dropdowns from database (Currency, Branch, Warehouse, Customer, Supplier, Category, etc.)
+- Confirmed WorkCenters form uses correct `capacity_per_hour` field (not old `capacity_per_day`)
+- Validated all form components redirect to correct canonical routes
+- Checked all form fields match migration column names
+
+**Code Quality:**
+- All routes verified (route:list successful)
+- All PHP syntax checks passing
+- Config cache compilation successful
+- View cache compilation successful
+
 ## High Priority
 
 ### Database & Performance

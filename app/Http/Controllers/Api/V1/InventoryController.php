@@ -254,9 +254,9 @@ class InventoryController extends BaseApiController
     /**
      * Resolve warehouse ID with fallback logic
      * Priority: preferred ID → default setting → branch warehouse → first available
-     * 
-     * @param int|null $preferredId Preferred warehouse ID from request
-     * @param int|null $branchId Branch ID to filter warehouses
+     *
+     * @param  int|null  $preferredId  Preferred warehouse ID from request
+     * @param  int|null  $branchId  Branch ID to filter warehouses
      * @return int|null Resolved warehouse ID or null if none available
      */
     protected function resolveWarehouseId(?int $preferredId, ?int $branchId = null): ?int
@@ -277,7 +277,7 @@ class InventoryController extends BaseApiController
             $branchWarehouse = \App\Models\Warehouse::where('branch_id', $branchId)
                 ->where('status', 'active')
                 ->first();
-            
+
             if ($branchWarehouse) {
                 return $branchWarehouse->id;
             }
@@ -285,7 +285,7 @@ class InventoryController extends BaseApiController
 
         // Fall back to first available active warehouse
         $firstWarehouse = \App\Models\Warehouse::where('status', 'active')->first();
-        
+
         return $firstWarehouse?->id;
     }
 }
