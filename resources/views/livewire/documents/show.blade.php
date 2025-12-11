@@ -13,7 +13,7 @@
             @endcan
             @can('documents.edit')
                 @if($document->uploaded_by === auth()->id())
-                    <a href="{{ route('documents.edit', $document->id) }}" class="erp-btn erp-btn-secondary">{{ __('Edit') }}</a>
+                    <a href="{{ route('app.documents.edit', $document->id) }}" class="erp-btn erp-btn-secondary">{{ __('Edit') }}</a>
                 @endif
             @endcan
         </div>
@@ -51,7 +51,7 @@
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="font-semibold text-slate-800">{{ __('Version History') }}</h3>
                     @can('documents.versions.manage')
-                        <a href="{{ route('documents.versions', $document->id) }}" class="text-sm text-blue-600 hover:text-blue-900">{{ __('Manage Versions') }}</a>
+                        <a href="{{ route('app.documents.versions', $document->id) }}" class="text-sm text-blue-600 hover:text-blue-900">{{ __('Manage Versions') }}</a>
                     @endcan
                 </div>
                 <div class="space-y-3">
