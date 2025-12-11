@@ -28,8 +28,9 @@ class InventoryController extends BaseApiController
                 'products.sku',
                 'products.min_stock',
                 'products.branch_id',
-                DB::raw('COALESCE(SUM(CASE WHEN stock_movements.direction = "in" THEN stock_movements.qty ELSE 0 END) - SUM(CASE WHEN stock_movements.direction = "out" THEN stock_movements.qty ELSE 0 END), 0) as current_quantity'),
+                DB::raw('COALESCE(SUM(CASE WHEN stock_movements.direction = ? THEN stock_movements.qty ELSE 0 END) - SUM(CASE WHEN stock_movements.direction = ? THEN stock_movements.qty ELSE 0 END), 0) as current_quantity'),
             ])
+            ->addBinding(['in', 'out'], 'select')
             ->leftJoin('stock_movements', 'products.id', '=', 'stock_movements.product_id')
             ->when($store?->branch_id, fn ($q) => $q->where('products.branch_id', $store->branch_id))
             ->when($request->filled('sku'), fn ($q) => $q->where('products.sku', $validated['sku']))
@@ -253,9 +254,9 @@ class InventoryController extends BaseApiController
     /**
      * Resolve warehouse ID with fallback logic
      * Priority: preferred ID → default setting → branch warehouse → first available
-     * 
-     * @param int|null $preferredId Preferred warehouse ID from request
-     * @param int|null $branchId Branch ID to filter warehouses
+     *
+     * @param  int|null  $preferredId  Preferred warehouse ID from request
+     * @param  int|null  $branchId  Branch ID to filter warehouses
      * @return int|null Resolved warehouse ID or null if none available
      */
     protected function resolveWarehouseId(?int $preferredId, ?int $branchId = null): ?int
@@ -276,7 +277,7 @@ class InventoryController extends BaseApiController
             $branchWarehouse = \App\Models\Warehouse::where('branch_id', $branchId)
                 ->where('status', 'active')
                 ->first();
-            
+
             if ($branchWarehouse) {
                 return $branchWarehouse->id;
             }
@@ -284,7 +285,7 @@ class InventoryController extends BaseApiController
 
         // Fall back to first available active warehouse
         $firstWarehouse = \App\Models\Warehouse::where('status', 'active')->first();
-        
+
         return $firstWarehouse?->id;
     }
 }

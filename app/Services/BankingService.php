@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\BankAccount;
-use App\Models\BankTransaction;
 use App\Models\BankReconciliation;
+use App\Models\BankTransaction;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -22,16 +22,16 @@ class BankingService
     {
         return DB::transaction(function () use ($data) {
             $bankAccount = BankAccount::lockForUpdate()->findOrFail($data['bank_account_id']);
-            
+
             $transaction = BankTransaction::create($data);
-            
+
             // Update bank account balance using signed amount
             $bankAccount->current_balance += $transaction->getSignedAmount();
             $transaction->balance_after = $bankAccount->current_balance;
             $transaction->save();
-            
+
             $bankAccount->save();
-            
+
             return $transaction;
         });
     }
@@ -46,12 +46,12 @@ class BankingService
         float $statementBalance
     ): BankReconciliation {
         $bankAccount = BankAccount::findOrFail($bankAccountId);
-        
+
         // Calculate book balance at statement date
         $bookBalance = $this->calculateBookBalanceAt($bankAccountId, $statementDate);
-        
+
         $difference = $statementBalance - $bookBalance;
-        
+
         return BankReconciliation::create([
             'bank_account_id' => $bankAccountId,
             'branch_id' => $branchId,
@@ -76,13 +76,20 @@ class BankingService
                     'status' => 'reconciled',
                     'reconciliation_id' => $reconciliation->id,
                 ]);
-            
+
             // Recalculate difference
-            $reconciledTotal = BankTransaction::where('reconciliation_id', $reconciliation->id)
-                ->sum(DB::raw('CASE WHEN type IN ("deposit", "interest") THEN amount ELSE -amount END'));
-            
+            $deposits = BankTransaction::where('reconciliation_id', $reconciliation->id)
+                ->whereIn('type', ['deposit', 'interest'])
+                ->sum('amount');
+
+            $withdrawals = BankTransaction::where('reconciliation_id', $reconciliation->id)
+                ->whereNotIn('type', ['deposit', 'interest'])
+                ->sum('amount');
+
+            $reconciledTotal = $deposits - $withdrawals;
+
             $newDifference = $reconciliation->statement_balance - $reconciliation->book_balance - $reconciledTotal;
-            
+
             $reconciliation->update(['difference' => $newDifference]);
         });
     }
@@ -92,10 +99,10 @@ class BankingService
      */
     public function completeReconciliation(BankReconciliation $reconciliation): void
     {
-        if (!$reconciliation->isBalanced()) {
+        if (! $reconciliation->isBalanced()) {
             throw new \Exception('Reconciliation is not balanced. Cannot complete.');
         }
-        
+
         $reconciliation->update([
             'status' => 'completed',
             'reconciliation_date' => now(),
@@ -108,14 +115,14 @@ class BankingService
     protected function calculateBookBalanceAt(int $bankAccountId, Carbon $date): float
     {
         $bankAccount = BankAccount::findOrFail($bankAccountId);
-        
+
         $transactions = BankTransaction::where('bank_account_id', $bankAccountId)
             ->where('transaction_date', '<=', $date)
             ->where('status', '!=', 'cancelled')
             ->get();
-        
+
         $balance = $bankAccount->opening_balance;
-        
+
         foreach ($transactions as $transaction) {
             if ($transaction->isDeposit() || $transaction->type === 'interest') {
                 $balance += $transaction->amount;
@@ -123,7 +130,7 @@ class BankingService
                 $balance -= $transaction->amount;
             }
         }
-        
+
         return $balance;
     }
 
@@ -136,10 +143,10 @@ class BankingService
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->where('status', '!=', 'cancelled')
             ->get();
-        
+
         $inflows = 0;
         $outflows = 0;
-        
+
         foreach ($transactions as $transaction) {
             if ($transaction->isDeposit() || $transaction->type === 'interest') {
                 $inflows += $transaction->amount;
@@ -147,7 +154,7 @@ class BankingService
                 $outflows += $transaction->amount;
             }
         }
-        
+
         return [
             'total_inflows' => $inflows,
             'total_outflows' => $outflows,
@@ -164,19 +171,20 @@ class BankingService
         $imported = 0;
         $skipped = 0;
         $errors = [];
-        
+
         foreach ($transactions as $txn) {
             try {
                 // Check if transaction already exists
                 $exists = BankTransaction::where('bank_account_id', $bankAccountId)
                     ->where('reference_number', $txn['reference_number'] ?? '')
                     ->exists();
-                
+
                 if ($exists) {
                     $skipped++;
+
                     continue;
                 }
-                
+
                 $this->recordTransaction([
                     'bank_account_id' => $bankAccountId,
                     'branch_id' => $txn['branch_id'],
@@ -189,7 +197,7 @@ class BankingService
                     'status' => 'cleared',
                     'created_by' => auth()->id(),
                 ]);
-                
+
                 $imported++;
             } catch (\Exception $e) {
                 $errors[] = [
@@ -198,7 +206,7 @@ class BankingService
                 ];
             }
         }
-        
+
         return [
             'imported' => $imported,
             'skipped' => $skipped,
