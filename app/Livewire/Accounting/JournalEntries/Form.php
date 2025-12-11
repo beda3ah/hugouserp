@@ -109,7 +109,7 @@ class Form extends Component
         ];
     }
 
-    protected function withValidator($validator): void
+    public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
             // Check that each line has either debit OR credit (not both, not neither)
