@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Rules;
 
 use App\Rules\ValidStockQuantity;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class ValidStockQuantityTest extends TestCase
 {
