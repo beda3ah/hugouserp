@@ -17,41 +17,39 @@ class ContractStoreRequest extends FormRequest
     {
         $branchId = $this->route('branch')?->id;
 
+        $unitValidation = ['required', 'exists:rental_units,id'];
+        if ($branchId) {
+            $unitValidation[] = function ($attribute, $value, $fail) use ($branchId) {
+                $unitExists = \App\Models\RentalUnit::where('id', $value)
+                    ->whereHas('property', function ($q) use ($branchId) {
+                        $q->where('branch_id', $branchId);
+                    })
+                    ->exists();
+
+                if (! $unitExists) {
+                    $fail(__('The selected unit does not belong to this branch.'));
+                }
+            };
+        }
+
+        $tenantValidation = ['required', 'exists:tenants,id'];
+        if ($branchId) {
+            $tenantValidation[] = function ($attribute, $value, $fail) use ($branchId) {
+                $tenantExists = \App\Models\Tenant::where('id', $value)
+                    ->where('branch_id', $branchId)
+                    ->exists();
+
+                if (! $tenantExists) {
+                    $fail(__('The selected tenant does not belong to this branch.'));
+                }
+            };
+        }
+
         return [
-            'unit_id' => [
-                'required',
-                'exists:rental_units,id',
-                function ($attribute, $value, $fail) use ($branchId) {
-                    if ($branchId) {
-                        $unitExists = \App\Models\RentalUnit::where('id', $value)
-                            ->whereHas('property', function ($q) use ($branchId) {
-                                $q->where('branch_id', $branchId);
-                            })
-                            ->exists();
-
-                        if (! $unitExists) {
-                            $fail(__('The selected unit does not belong to this branch.'));
-                        }
-                    }
-                },
-            ],
-            'tenant_id' => [
-                'required',
-                'exists:tenants,id',
-                function ($attribute, $value, $fail) use ($branchId) {
-                    if ($branchId) {
-                        $tenantExists = \App\Models\Tenant::where('id', $value)
-                            ->where('branch_id', $branchId)
-                            ->exists();
-
-                        if (! $tenantExists) {
-                            $fail(__('The selected tenant does not belong to this branch.'));
-                        }
-                    }
-                },
-            ],
+            'unit_id' => $unitValidation,
+            'tenant_id' => $tenantValidation,
             'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after:start_date'],
+            'end_date' => ['required', 'date'],
             'rent' => ['required', 'numeric', 'gt:0'],
         ];
     }
