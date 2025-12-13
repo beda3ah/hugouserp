@@ -60,11 +60,11 @@ class RentalService implements RentalServiceInterface
         );
     }
 
-    public function createTenant(array $payload, int $branchId): Tenant
+    public function createTenant(array $payload, ?int $branchId = null): Tenant
     {
         return $this->handleServiceOperation(
             callback: fn () => Tenant::create([
-                'branch_id' => $branchId,
+                'branch_id' => $branchId ?? auth()->user()?->branch_id ?? null,
                 'name' => $payload['name'],
                 'phone' => $payload['phone'] ?? null,
                 'email' => $payload['email'] ?? null,
@@ -74,11 +74,15 @@ class RentalService implements RentalServiceInterface
         );
     }
 
-    public function archiveTenant(int $tenantId, int $branchId): Tenant
+    public function archiveTenant(int $tenantId, ?int $branchId = null): Tenant
     {
         return $this->handleServiceOperation(
             callback: function () use ($tenantId, $branchId) {
-                $t = Tenant::where('branch_id', $branchId)->findOrFail($tenantId);
+                $query = Tenant::query();
+                if ($branchId !== null) {
+                    $query->where('branch_id', $branchId);
+                }
+                $t = $query->findOrFail($tenantId);
                 $t->is_archived = true;
                 $t->save();
 
@@ -89,20 +93,22 @@ class RentalService implements RentalServiceInterface
         );
     }
 
-    public function createContract(int $unitId, int $tenantId, array $payload, int $branchId): RentalContract
+    public function createContract(int $unitId, int $tenantId, array $payload, ?int $branchId = null): RentalContract
     {
         return $this->handleServiceOperation(
             callback: fn () => DB::transaction(function () use ($unitId, $tenantId, $payload, $branchId) {
-                // Verify unit belongs to branch
-                RentalUnit::whereHas('property', function ($q) use ($branchId) {
-                    $q->where('branch_id', $branchId);
-                })->findOrFail($unitId);
+                if ($branchId !== null) {
+                    // Verify unit belongs to branch
+                    RentalUnit::whereHas('property', function ($q) use ($branchId) {
+                        $q->where('branch_id', $branchId);
+                    })->findOrFail($unitId);
 
-                // Verify tenant belongs to branch
-                Tenant::where('branch_id', $branchId)->findOrFail($tenantId);
+                    // Verify tenant belongs to branch
+                    Tenant::where('branch_id', $branchId)->findOrFail($tenantId);
+                }
 
                 $c = RentalContract::create([
-                    'branch_id' => $branchId,
+                    'branch_id' => $branchId ?? auth()->user()?->branch_id ?? null,
                     'unit_id' => $unitId,
                     'tenant_id' => $tenantId,
                     'start_date' => $payload['start_date'],
@@ -118,11 +124,15 @@ class RentalService implements RentalServiceInterface
         );
     }
 
-    public function renewContract(int $contractId, array $payload, int $branchId): RentalContract
+    public function renewContract(int $contractId, array $payload, ?int $branchId = null): RentalContract
     {
         return $this->handleServiceOperation(
             callback: function () use ($contractId, $payload, $branchId) {
-                $c = RentalContract::where('branch_id', $branchId)->findOrFail($contractId);
+                $query = RentalContract::query();
+                if ($branchId !== null) {
+                    $query->where('branch_id', $branchId);
+                }
+                $c = $query->findOrFail($contractId);
                 $c->end_date = $payload['end_date'];
                 $c->rent = (float) $payload['rent'];
                 $c->save();
@@ -134,11 +144,15 @@ class RentalService implements RentalServiceInterface
         );
     }
 
-    public function terminateContract(int $contractId, int $branchId): RentalContract
+    public function terminateContract(int $contractId, ?int $branchId = null): RentalContract
     {
         return $this->handleServiceOperation(
             callback: function () use ($contractId, $branchId) {
-                $c = RentalContract::where('branch_id', $branchId)->findOrFail($contractId);
+                $query = RentalContract::query();
+                if ($branchId !== null) {
+                    $query->where('branch_id', $branchId);
+                }
+                $c = $query->findOrFail($contractId);
                 $c->status = 'terminated';
                 $c->save();
 
