@@ -31,16 +31,11 @@ class HRMServiceTest extends TestCase
         ]);
 
         $this->employee = HREmployee::create([
-            'employee_code' => 'EMP001',
+            'code' => 'EMP001',
             'name' => 'John Doe',
-            'email' => 'john@example.com',
-            'phone' => '1234567890',
-            'hire_date' => now(),
             'position' => 'Developer',
             'salary' => 5000,
-            'salary_type' => 'monthly',
-            'employment_type' => 'full_time',
-            'status' => 'active',
+            'is_active' => true,
             'branch_id' => $this->branch->id,
         ]);
     }
