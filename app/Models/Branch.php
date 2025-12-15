@@ -7,6 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Branch extends BaseModel
 {
@@ -75,6 +76,47 @@ class Branch extends BaseModel
     public function products(): HasMany
     {
         return $this->hasMany(Product::class);
+    }
+
+    public function properties(): HasMany
+    {
+        return $this->hasMany(Property::class);
+    }
+
+    /**
+     * Get all rental units for this branch through properties.
+     * Used by route model binding with scopeBindings().
+     */
+    public function units(): HasManyThrough
+    {
+        return $this->hasManyThrough(RentalUnit::class, Property::class);
+    }
+
+    /**
+     * Get all tenants for this branch.
+     * Used by route model binding with scopeBindings().
+     */
+    public function tenants(): HasMany
+    {
+        return $this->hasMany(Tenant::class);
+    }
+
+    /**
+     * Get all rental contracts for this branch.
+     * Used by route model binding with scopeBindings().
+     */
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(RentalContract::class);
+    }
+
+    /**
+     * Get all rental invoices for this branch through contracts.
+     * Used by route model binding with scopeBindings().
+     */
+    public function invoices(): HasManyThrough
+    {
+        return $this->hasManyThrough(RentalInvoice::class, RentalContract::class, 'branch_id', 'contract_id');
     }
 
     public function priceTiers(): HasMany
