@@ -9,10 +9,20 @@ use App\Http\Requests\VehicleStoreRequest;
 use App\Http\Requests\VehicleUpdateRequest;
 use App\Models\Vehicle;
 use App\Services\Contracts\MotorcycleServiceInterface as Motos;
+use Illuminate\Http\Request;
 
 class VehicleController extends Controller
 {
     public function __construct(protected Motos $motos) {}
+
+    protected function requireBranchId(Request $request): int
+    {
+        $branchId = $request->attributes->get('branch_id');
+
+        abort_if($branchId === null, 400, __('Branch context is required.'));
+
+        return (int) $branchId;
+    }
 
     public function index()
     {
@@ -22,7 +32,7 @@ class VehicleController extends Controller
     public function store(VehicleStoreRequest $request)
     {
         $data = $request->validated();
-        $row = Vehicle::create($data + ['branch_id' => (int) $request->attributes->get('branch_id')]);
+        $row = Vehicle::create($data + ['branch_id' => $this->requireBranchId($request)]);
 
         return $this->ok($row, __('Created'), 201);
     }

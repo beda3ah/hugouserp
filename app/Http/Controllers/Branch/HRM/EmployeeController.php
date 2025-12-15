@@ -15,6 +15,15 @@ class EmployeeController extends Controller
 {
     public function __construct(protected HRM $hrm) {}
 
+    protected function requireBranchId(Request $request): int
+    {
+        $branchId = $request->attributes->get('branch_id');
+
+        abort_if($branchId === null, 400, __('Branch context is required.'));
+
+        return (int) $branchId;
+    }
+
     public function index()
     {
         return $this->ok($this->hrm->employees());
