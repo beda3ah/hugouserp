@@ -1,46 +1,103 @@
 # Module Context System
 
 ## Overview
-The Module Context System allows users to filter their workspace by specific business modules (Inventory, POS, Sales, etc.) or view all modules at once.
+The Module Context System provides UI-level module filtering that works alongside the existing route-based module system. It allows users to filter their workspace by specific business modules or view all modules at once.
+
+## Architecture
+
+### Two Complementary Systems
+
+1. **Route-Level Module Context** (Existing)
+   - Middleware: `SetModuleContext` (alias: `module`)
+   - Purpose: API and route parameter-based module identification
+   - Storage: Request attributes and container
+   - Usage: API routes with `{moduleKey}` parameter or `X-Module-Key` header
+
+2. **UI-Level Module Context** (New)
+   - Middleware: `ModuleContext` (recommended alias: `module.ui`)
+   - Service: `ModuleContextService`
+   - Purpose: Session-based UI filtering and navigation
+   - Storage: Session
+   - Usage: View filtering, sidebar context, report filtering
+
+### How They Work Together
+
+The two systems are designed to be compatible and complementary:
+- **Route context** determines which module's API/routes are being accessed
+- **UI context** determines what the user sees in the interface
+- They can be aligned or independent based on use case
+
+The `ModuleContext` middleware is aware of `SetModuleContext` and can optionally sync with it.
 
 ## Components
 
-### 1. ModuleContext Middleware
+### 1. ModuleContext Middleware (UI-Level)
 **Location:** `app/Http/Middleware/ModuleContext.php`
 
 - Ensures `module_context` session variable exists (defaults to 'all')
 - Allows context switching via `?module_context=<module>` query parameter
+- Compatible with existing `SetModuleContext` middleware
+- Can detect route-level module keys and provide hints
 - Valid contexts: all, inventory, pos, sales, purchases, accounting, warehouse, manufacturing, hrm, rental, fixed_assets, banking, projects, documents, helpdesk
 
-**Usage:**
+**Registration:**
+Add as middleware alias in `bootstrap/app.php`:
 ```php
-// In routes/web.php or bootstrap/app.php
-Route::middleware(['auth', ModuleContext::class])->group(function () {
-    // Your routes
+$middleware->alias([
+    'module.ui' => \App\Http\Middleware\ModuleContext::class,
+    // Other aliases...
+]);
+```
+
+**Usage in Routes:**
+```php
+// For UI routes that need context filtering
+Route::middleware(['auth', 'module.ui'])->group(function () {
+    Route::get('/dashboard', DashboardController::class);
+    Route::get('/reports', ReportsController::class);
+});
+
+// Can be combined with existing module middleware
+Route::middleware(['auth', 'module', 'module.ui'])->group(function () {
+    // Routes that use both systems
 });
 ```
 
-### 2. ModuleContextService
+### 2. ModuleContextService (Enhanced)
 **Location:** `app/Services/ModuleContextService.php`
 
-Static service for accessing and managing module context.
+Static service for accessing and managing both UI and route-level contexts.
 
 **Methods:**
-- `current()`: Get current context (string)
-- `set(string $context)`: Set context
-- `is(string $context)`: Check if specific context is active
+
+**UI Context Methods:**
+- `current()`: Get current UI context (string)
+- `set(string $context)`: Set UI context
+- `is(string $context)`: Check if specific UI context is active
 - `isAll()`: Check if "All Modules" is active
 - `getAvailableModules()`: Get all available modules with labels
 - `currentLabel()`: Get label for current context
+
+**Route Context Methods:**
+- `routeKey()`: Get route-level module key (from SetModuleContext)
+- `matchesRouteKey()`: Check if UI context matches route key
 
 **Usage:**
 ```php
 use App\Services\ModuleContextService;
 
-// Get current context
+// Get current UI context
 $context = ModuleContextService::current();
 
-// Check context
+// Get route-level module key (if using API routes)
+$routeKey = ModuleContextService::routeKey();
+
+// Check if contexts are aligned
+if (ModuleContextService::matchesRouteKey()) {
+    // UI and route contexts match
+}
+
+// Check UI context
 if (ModuleContextService::is('inventory')) {
     // Show inventory-specific content
 }
@@ -198,6 +255,71 @@ class Index extends Component
     }
 }
 ```
+
+## Compatibility with Existing Systems
+
+### Integration with SetModuleContext
+
+The new UI-level context system is fully compatible with the existing `SetModuleContext` middleware:
+
+**Scenario 1: API Routes with Module Keys**
+```php
+// Route with module parameter
+Route::get('/api/modules/{moduleKey}/products', ProductController::class)
+    ->middleware(['api-auth', 'module']);
+
+// SetModuleContext extracts 'moduleKey' from route parameter
+// ModuleContext (if applied) maintains independent UI context
+```
+
+**Scenario 2: Combined Usage**
+```php
+// Both systems working together
+Route::middleware(['auth', 'module', 'module.ui'])->group(function () {
+    Route::get('/app/{moduleKey}/dashboard', DashboardController::class);
+});
+
+// In controller:
+$routeModule = app('req.module_key'); // From SetModuleContext
+$uiContext = ModuleContextService::current(); // From ModuleContext
+
+// Check if they're aligned
+if (ModuleContextService::matchesRouteKey()) {
+    // User is viewing content for their selected module
+}
+```
+
+**Scenario 3: UI-Only Routes**
+```php
+// Routes that don't need route-level module keys
+Route::middleware(['auth', 'module.ui'])->group(function () {
+    Route::get('/dashboard', DashboardController::class);
+    Route::get('/reports', ReportsController::class);
+});
+
+// Only UI context is used for filtering
+```
+
+### Module Key Mapping
+
+The systems use compatible but slightly different key formats:
+
+| Route Key (SetModuleContext) | UI Context Key (ModuleContext) |
+|------------------------------|--------------------------------|
+| inventory                    | inventory                      |
+| pos                          | pos                            |
+| fixed-assets                 | fixed_assets                   |
+| hrm                          | hrm                            |
+
+The middleware automatically maps between these formats when needed.
+
+### Best Practices for Compatibility
+
+1. **Use `module` alias for API routes**: Keep using the existing `SetModuleContext` for API routes with module parameters
+2. **Use `module.ui` alias for UI routes**: Apply the new context system to web UI routes
+3. **Combine when needed**: Both can be used together on routes that need both levels of context
+4. **Check alignment**: Use `ModuleContextService::matchesRouteKey()` to verify contexts match
+5. **Independent operation**: Each system works independently - one doesn't require the other
 
 ## Migration Guide
 

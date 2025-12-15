@@ -4,10 +4,21 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+/**
+ * ModuleContextService
+ *
+ * Manages UI-level module context for filtering and navigation.
+ * Works alongside the existing SetModuleContext middleware for API/route-level module keys.
+ *
+ * This service provides:
+ * - Session-based UI context management
+ * - Helper methods for context checking
+ * - Compatible with existing module routing system
+ */
 class ModuleContextService
 {
     /**
-     * Get the current module context.
+     * Get the current UI module context.
      */
     public static function current(): string
     {
@@ -15,7 +26,16 @@ class ModuleContextService
     }
 
     /**
-     * Set the module context.
+     * Get the route-level module key (set by SetModuleContext middleware).
+     * This is used for API routes with {moduleKey} parameter.
+     */
+    public static function routeKey(): ?string
+    {
+        return app('req.module_key', null);
+    }
+
+    /**
+     * Set the UI module context.
      */
     public static function set(string $context): void
     {
@@ -23,7 +43,7 @@ class ModuleContextService
     }
 
     /**
-     * Check if a specific context is active.
+     * Check if a specific UI context is active.
      */
     public static function is(string $context): bool
     {
@@ -71,5 +91,43 @@ class ModuleContextService
         $modules = self::getAvailableModules();
 
         return $modules[$context] ?? __('Unknown');
+    }
+
+    /**
+     * Check if current context matches the route module key.
+     * Useful for determining if UI and API contexts are aligned.
+     */
+    public static function matchesRouteKey(): bool
+    {
+        $routeKey = self::routeKey();
+        if (!$routeKey) {
+            return true; // No route key means we're in a non-module route
+        }
+
+        $context = self::current();
+        if ($context === 'all') {
+            return true; // "All" matches everything
+        }
+
+        // Map route keys to UI contexts
+        $keyMap = [
+            'inventory' => 'inventory',
+            'pos' => 'pos',
+            'sales' => 'sales',
+            'purchases' => 'purchases',
+            'accounting' => 'accounting',
+            'warehouse' => 'warehouse',
+            'manufacturing' => 'manufacturing',
+            'hrm' => 'hrm',
+            'rental' => 'rental',
+            'fixed-assets' => 'fixed_assets',
+            'banking' => 'banking',
+            'projects' => 'projects',
+            'documents' => 'documents',
+            'helpdesk' => 'helpdesk',
+        ];
+
+        $mappedContext = $keyMap[$routeKey] ?? $routeKey;
+        return $context === $mappedContext;
     }
 }

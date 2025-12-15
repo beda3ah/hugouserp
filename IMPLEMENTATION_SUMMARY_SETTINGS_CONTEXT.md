@@ -38,27 +38,34 @@ All defaults are sourced from `config/settings.php` which provides:
 ### 2. Module Context System ✅
 
 **New Files Created:**
-- `app/Http/Middleware/ModuleContext.php` - Middleware for context management
-- `app/Services/ModuleContextService.php` - Static service for context operations
+- `app/Http/Middleware/ModuleContext.php` - UI-level context middleware (compatible with existing SetModuleContext)
+- `app/Services/ModuleContextService.php` - Enhanced service with route context awareness
 - `resources/views/components/module-context-selector.blade.php` - UI dropdown component
-- `docs/MODULE_CONTEXT_SYSTEM.md` - Complete documentation
+- `docs/MODULE_CONTEXT_SYSTEM.md` - Complete documentation with compatibility guide
+
+**System Compatibility:**
+The new UI context system is fully compatible with the existing route-level `SetModuleContext` middleware:
+- **SetModuleContext** (existing): Handles API routes with `{moduleKey}` parameters and `X-Module-Key` headers
+- **ModuleContext** (new): Manages session-based UI context for filtering views
+- **Integration**: Both can run together, with automatic key mapping and alignment detection
 
 **Features:**
-- Session-based context storage
+- Session-based UI context storage
 - 15 available module contexts + "All Modules" option
 - Query parameter switching: `?module_context=inventory`
 - Alpine.js dropdown with smooth transitions
 - Current context indicator with checkmark
-- Service methods:
-  - `current()` - Get active context
-  - `is($context)` - Check specific context
-  - `isAll()` - Check if all modules view
-  - `currentLabel()` - Get translated label
-  - `set($context)` - Set context
+- Compatible with existing module routing system
+
+**Service Methods:**
+- **UI Context**: `current()`, `is()`, `isAll()`, `currentLabel()`, `set()`
+- **Route Context**: `routeKey()` - Gets module key from SetModuleContext
+- **Alignment**: `matchesRouteKey()` - Checks if UI and route contexts match
 
 **Integration Points:**
-- Add middleware to route groups
-- Use `<x-module-context-selector />` in layouts
+- Register as `module.ui` alias to differentiate from existing `module` alias
+- Use on UI routes: `Route::middleware(['auth', 'module.ui'])`
+- Combine with existing: `Route::middleware(['auth', 'module', 'module.ui'])`
 - Filter queries: `if (!ModuleContextService::isAll()) { ... }`
 - Context-aware navigation and reports
 
@@ -230,28 +237,44 @@ All modified PHP files passed syntax checks:
 
 To activate the new features:
 
-### 1. Module Context Middleware
-Add to `bootstrap/app.php` or route groups:
+### 1. Register Module Context Middleware
+Add to `bootstrap/app.php` middleware aliases:
 ```php
-->middleware([
-    'auth',
-    \App\Http\Middleware\ModuleContext::class,
-])
+$middleware->alias([
+    'module.ui' => \App\Http\Middleware\ModuleContext::class,
+    // The existing 'module' alias remains for SetModuleContext
+    'module' => \App\Http\Middleware\SetModuleContext::class,
+]);
 ```
 
-### 2. Module Context Selector
+**Important**: The new middleware uses `module.ui` alias to differentiate from the existing `module` alias (SetModuleContext). Both systems work together for full compatibility.
+
+### 2. Apply to Web UI Routes
+```php
+// For UI-only routes
+Route::middleware(['auth', 'module.ui'])->group(function () {
+    Route::get('/dashboard', DashboardController::class);
+});
+
+// For routes using both systems (API + UI contexts)
+Route::middleware(['auth', 'module', 'module.ui'])->group(function () {
+    Route::get('/app/{moduleKey}/dashboard', DashboardController::class);
+});
+```
+
+### 3. Module Context Selector
 Add to main layout:
 ```blade
 <x-module-context-selector />
 ```
 
-### 3. Run Migrations
+### 4. Run Migrations
 If database is available:
 ```bash
 php artisan migrate
 ```
 
-### 4. Clear Caches
+### 5. Clear Caches
 ```bash
 php artisan cache:clear
 php artisan config:clear
@@ -274,6 +297,8 @@ php artisan view:clear
    - Validated against whitelist
    - Session-based (secure)
    - No direct DB manipulation
+   - Compatible with existing SetModuleContext (route-level) system
+   - Both systems can coexist without conflicts
 
 ## Performance Optimizations
 
