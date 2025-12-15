@@ -314,6 +314,10 @@ class ReportService implements ReportServiceInterface
                 $this->applyDateFilters($query, $filters, 'incomes.income_date');
                 $this->applyBranchFilter($query, $filters, 'incomes.branch_id');
 
+                if (! empty($filters['category_id'])) {
+                    $query->where('incomes.category_id', $filters['category_id']);
+                }
+
                 $items = $query->orderBy('incomes.income_date', 'desc')->get();
 
                 return [
