@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Branch\HRM;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Branch\Concerns\RequiresBranchContext;
 use App\Models\HREmployee;
 use App\Services\Contracts\HRMServiceInterface as HRM;
 use Illuminate\Http\Request;
@@ -13,16 +14,9 @@ use Illuminate\Support\Facades\Schema;
 
 class EmployeeController extends Controller
 {
+    use RequiresBranchContext;
+
     public function __construct(protected HRM $hrm) {}
-
-    protected function requireBranchId(Request $request): int
-    {
-        $branchId = $request->attributes->get('branch_id');
-
-        abort_if($branchId === null, 400, __('Branch context is required.'));
-
-        return (int) $branchId;
-    }
 
     public function index()
     {

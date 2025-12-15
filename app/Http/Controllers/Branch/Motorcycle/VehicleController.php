@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Branch\Motorcycle;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Branch\Concerns\RequiresBranchContext;
 use App\Http\Requests\VehicleStoreRequest;
 use App\Http\Requests\VehicleUpdateRequest;
 use App\Models\Vehicle;
@@ -13,16 +14,9 @@ use Illuminate\Http\Request;
 
 class VehicleController extends Controller
 {
+    use RequiresBranchContext;
+
     public function __construct(protected Motos $motos) {}
-
-    protected function requireBranchId(Request $request): int
-    {
-        $branchId = $request->attributes->get('branch_id');
-
-        abort_if($branchId === null, 400, __('Branch context is required.'));
-
-        return (int) $branchId;
-    }
 
     public function index()
     {
