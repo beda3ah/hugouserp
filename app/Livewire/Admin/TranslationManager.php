@@ -138,16 +138,19 @@ class TranslationManager extends Component
     {
         $this->validate([
             'newKey' => 'required|string|max:255',
-            'newGroup' => 'required|string|max:50',
-            'newValueEn' => 'required|string',
-            'newValueAr' => 'required|string',
+            'newGroup' => 'required|string|max:50|alpha_dash',
+            'newValueEn' => 'required|string|max:2000',
+            'newValueAr' => 'required|string|max:2000',
         ]);
         
+        // Sanitize the key to prevent code injection
+        $sanitizedKey = preg_replace('/[^a-zA-Z0-9_.]/', '', $this->newKey);
+        
         // Save English translation
-        $this->saveToFile('en', $this->newGroup, $this->newKey, $this->newValueEn);
+        $this->saveToFile('en', $this->newGroup, $sanitizedKey, $this->newValueEn);
         
         // Save Arabic translation
-        $this->saveToFile('ar', $this->newGroup, $this->newKey, $this->newValueAr);
+        $this->saveToFile('ar', $this->newGroup, $sanitizedKey, $this->newValueAr);
         
         $this->showAddModal = false;
         $this->reset(['newKey', 'newGroup', 'newValueEn', 'newValueAr']);
@@ -175,8 +178,8 @@ class TranslationManager extends Component
     public function updateTranslation()
     {
         $this->validate([
-            'editValueEn' => 'required|string',
-            'editValueAr' => 'required|string',
+            'editValueEn' => 'required|string|max:2000',
+            'editValueAr' => 'required|string|max:2000',
         ]);
         
         // Extract just the key without group prefix
@@ -223,8 +226,11 @@ class TranslationManager extends Component
             }
         }
         
-        // Save to file
-        $content = "<?php\n\nreturn " . var_export($translations, true) . ";\n";
+        // Save to file using secure JSON encoding then converting to PHP array syntax
+        // This prevents code injection from translation values
+        $jsonContent = json_encode($translations, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        $phpArray = $this->jsonToPhpArray($jsonContent);
+        $content = "<?php\n\nreturn " . $phpArray . ";\n";
         
         // Ensure directory exists
         $directory = dirname($filePath);
@@ -234,13 +240,27 @@ class TranslationManager extends Component
         
         File::put($filePath, $content);
         
-        // Clear cache
+        // Clear translation-specific cache
         Cache::forget("translations.{$locale}");
+    }
+    
+    /**
+     * Convert JSON string to PHP array syntax safely
+     */
+    protected function jsonToPhpArray($json)
+    {
+        $array = json_decode($json, true);
+        return var_export($array, true);
     }
     
     public function clearCache()
     {
-        Artisan::call('cache:clear');
+        // Only clear translation-related caches, not the entire application cache
+        Cache::forget('translations.en');
+        Cache::forget('translations.ar');
+        
+        // Clear config cache which affects translations
+        Artisan::call('config:clear');
         
         $this->dispatch('notify', [
             'type' => 'success',
