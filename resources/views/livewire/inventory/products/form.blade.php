@@ -176,7 +176,7 @@
                         </div>
                         <select wire:model="form.price_currency" class="erp-input w-24">
                             @foreach($currencies as $currency)
-                                <option value="{{ $currency->code }}">{{ $currency->code }}</option>
+                                <option value="{{ $currency['code'] }}">{{ $currency['code'] }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -195,7 +195,7 @@
                         </div>
                         <select wire:model="form.cost_currency" class="erp-input w-24" {{ $form['type'] === 'service' ? 'disabled' : '' }}>
                             @foreach($currencies as $currency)
-                                <option value="{{ $currency->code }}">{{ $currency->code }}</option>
+                                <option value="{{ $currency['code'] }}">{{ $currency['code'] }}</option>
                             @endforeach
                         </select>
                     </div>

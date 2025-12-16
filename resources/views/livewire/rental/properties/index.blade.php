@@ -4,7 +4,7 @@
             <h1 class="text-2xl font-bold text-slate-800">{{ __('Properties Management') }}</h1>
             <p class="text-sm text-slate-500">{{ __('Manage rental properties and units') }}</p>
         </div>
-        @can('rentals.create')
+        @can('rental.properties.create')
         <button wire:click="openModal" class="erp-btn erp-btn-primary">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             {{ __('Add Property') }}
