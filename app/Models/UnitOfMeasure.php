@@ -87,9 +87,9 @@ class UnitOfMeasure extends Model
         
         $targetFactor = (float) $targetUnit->conversion_factor;
         
-        // Prevent division by zero
-        if ($targetFactor <= 0) {
-            throw new \InvalidArgumentException('Target unit conversion factor must be greater than zero');
+        // Prevent division by zero - conversion factors should be positive for inventory units
+        if ($targetFactor == 0) {
+            throw new \InvalidArgumentException('Target unit conversion factor cannot be zero');
         }
 
         return $baseValue / $targetFactor;
