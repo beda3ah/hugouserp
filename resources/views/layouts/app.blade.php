@@ -21,9 +21,17 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
-    {{-- Turbo.js for SPA-like navigation --}}
+    {{-- Turbo.js for SPA-like navigation (optional enhancement) --}}
     <script type="module">
-        import hotwiredTurbo from 'https://cdn.skypack.dev/@hotwired/turbo';
+        // Turbo.js loaded via CDN as optional enhancement
+        // If CDN fails, navigation falls back to standard page loads
+        try {
+            const turbo = await import('https://cdn.skypack.dev/@hotwired/turbo');
+            window.TurboLoaded = true;
+        } catch (e) {
+            console.info('Turbo.js not loaded, using standard navigation');
+            window.TurboLoaded = false;
+        }
     </script>
 
     <style>
@@ -274,18 +282,25 @@
 
 <script>
     // Intelligent prefetching - preload links on hover
+    // Uses a Set to track prefetched URLs to avoid duplicates
     document.addEventListener('DOMContentLoaded', function() {
         const prefetchedUrls = new Set();
+        const MAX_PREFETCHES = 20; // Limit to prevent memory issues
         
         document.querySelectorAll('a[href^="/"]').forEach(link => {
             link.addEventListener('mouseenter', function() {
                 const href = this.getAttribute('href');
-                if (href && !prefetchedUrls.has(href) && !href.includes('#')) {
+                if (href && !prefetchedUrls.has(href) && !href.includes('#') && prefetchedUrls.size < MAX_PREFETCHES) {
                     prefetchedUrls.add(href);
                     const prefetch = document.createElement('link');
                     prefetch.rel = 'prefetch';
                     prefetch.href = href;
                     document.head.appendChild(prefetch);
+                    
+                    // Remove prefetch link after 30 seconds to free memory
+                    setTimeout(() => {
+                        prefetch.remove();
+                    }, 30000);
                 }
             }, { once: true, passive: true });
         });
@@ -299,25 +314,27 @@
         }
     });
     
-    // Show loading indicator during Turbo navigation
-    document.addEventListener('turbo:before-fetch-request', () => {
-        const loader = document.getElementById('page-loading');
-        if (loader) {
-            loader.style.display = 'block';
-            loader.style.transform = 'translateX(-50%)';
-        }
-    });
-    
-    document.addEventListener('turbo:before-fetch-response', () => {
-        const loader = document.getElementById('page-loading');
-        if (loader) {
-            loader.style.transform = 'translateX(0)';
-            setTimeout(() => {
-                loader.style.display = 'none';
-                loader.style.transform = 'translateX(-100%)';
+    // Show loading indicator during Turbo navigation (only if Turbo is loaded)
+    if (window.TurboLoaded !== false) {
+        document.addEventListener('turbo:before-fetch-request', () => {
+            const loader = document.getElementById('page-loading');
+            if (loader) {
+                loader.style.display = 'block';
+                loader.style.transform = 'translateX(-50%)';
+            }
+        });
+        
+        document.addEventListener('turbo:before-fetch-response', () => {
+            const loader = document.getElementById('page-loading');
+            if (loader) {
+                loader.style.transform = 'translateX(0)';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    loader.style.transform = 'translateX(-100%)';
             }, 300);
         }
     });
+    }
 </script>
     
 </body>
