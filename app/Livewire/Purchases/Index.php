@@ -77,6 +77,40 @@ class Index extends Component
         });
     }
 
+    public function export()
+    {
+        $user = auth()->user();
+
+        $data = Purchase::query()
+            ->leftJoin('suppliers', 'purchases.supplier_id', '=', 'suppliers.id')
+            ->leftJoin('branches', 'purchases.branch_id', '=', 'branches.id')
+            ->when($user && $user->branch_id, fn ($q) => $q->where('purchases.branch_id', $user->branch_id))
+            ->when($this->search, fn ($q) => $q->where(function ($query) {
+                $query->where('purchases.code', 'like', "%{$this->search}%")
+                    ->orWhere('purchases.reference_no', 'like', "%{$this->search}%")
+                    ->orWhere('suppliers.name', 'like', "%{$this->search}%");
+            }))
+            ->when($this->status, fn ($q) => $q->where('purchases.status', $this->status))
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('purchases.created_at', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('purchases.created_at', '<=', $this->dateTo))
+            ->orderBy('purchases.'.$this->sortField, $this->sortDirection)
+            ->select([
+                'purchases.id',
+                'purchases.code as reference',
+                'purchases.created_at as purchase_date',
+                'suppliers.name as supplier_name',
+                'purchases.grand_total',
+                'purchases.paid_total as amount_paid',
+                'purchases.due_total as amount_due',
+                'purchases.status',
+                'branches.name as branch_name',
+                'purchases.created_at',
+            ])
+            ->get();
+
+        return $this->performExport('purchases', $data, __('Purchases Export'));
+    }
+
     #[Layout('layouts.app')]
     public function render()
     {
