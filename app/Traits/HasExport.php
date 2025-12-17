@@ -70,7 +70,7 @@ trait HasExport
                 ->toArray();
         });
 
-        $filename = $entityType.'_export_'.date('Y-m-d_His');
+        $filename = $entityType.'_export_'.date('Y-m-d_His').'.'.$this->exportFormat;
 
         $filepath = $exportService->export(
             $exportData,
@@ -87,8 +87,16 @@ trait HasExport
 
         $this->closeExportModal();
 
-        $downloadName = $filename.'.'.$this->exportFormat;
+        // Store export info in session for download
+        session()->put('export_file', [
+            'path' => $filepath,
+            'name' => $filename,
+            'time' => now()->timestamp,
+        ]);
 
-        return response()->download($filepath, $downloadName)->deleteFileAfterSend(true);
+        // Use JavaScript to trigger download via a dedicated route
+        $this->dispatch('trigger-download', url: route('download.export'));
+
+        session()->flash('success', __('Export prepared. Download starting...'));
     }
 }

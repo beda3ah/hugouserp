@@ -337,6 +337,25 @@
         }
     })();
     
+    // Handle export downloads - triggered from Livewire components
+    document.addEventListener('livewire:initialized', () => {
+        Livewire.on('trigger-download', (event) => {
+            const url = event.url || event[0]?.url || event[0];
+            if (url) {
+                // Create hidden iframe to trigger download without page navigation
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = url;
+                document.body.appendChild(iframe);
+                
+                // Remove iframe after download starts
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 2000);
+            }
+        });
+    });
+    
     // Handle theme changes from UserPreferences
     document.addEventListener('livewire:initialized', () => {
         Livewire.on('theme-changed', (event) => {

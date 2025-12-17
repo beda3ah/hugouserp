@@ -99,6 +99,23 @@ Route::get('/csrf-token', function () {
     ]);
 })->middleware(['web', 'auth', 'throttle:60,1']);
 
+// Export download endpoint - handles file downloads from exports
+Route::get('/download/export', function () {
+    $exportInfo = session()->pull('export_file');
+    
+    if (!$exportInfo || !isset($exportInfo['path']) || !file_exists($exportInfo['path'])) {
+        abort(404, 'Export file not found or expired');
+    }
+    
+    // Check if file is too old (older than 5 minutes)
+    if (isset($exportInfo['time']) && (now()->timestamp - $exportInfo['time']) > 300) {
+        @unlink($exportInfo['path']);
+        abort(410, 'Export file has expired');
+    }
+    
+    return response()->download($exportInfo['path'], $exportInfo['name'])->deleteFileAfterSend(true);
+})->middleware(['web', 'auth'])->name('download.export');
+
 /*
 |--------------------------------------------------------------------------
 | Authentication Routes
