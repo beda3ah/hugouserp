@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Traits\AuditsChanges;
 use App\Traits\HasBranch;
 use App\Traits\HasDynamicFields;
 use App\Traits\HasJsonAttributes;
-use App\Traits\LogsActivity;
 use App\Traits\ModuleAware;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -16,11 +16,11 @@ use Illuminate\Support\Str;
 
 abstract class BaseModel extends Model
 {
+    use AuditsChanges;
     use HasBranch;
     use HasDynamicFields;
     use HasFactory;
     use HasJsonAttributes;
-    use LogsActivity;
     use ModuleAware;
     use SoftDeletes;
 
