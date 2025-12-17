@@ -91,6 +91,33 @@ Route::get('/health', function () {
     ]);
 });
 
+// CSRF token refresh endpoint to prevent 419 errors during long sessions
+// Requires authentication and is rate-limited to prevent abuse
+Route::get('/csrf-token', function () {
+    return response()->json([
+        'csrf_token' => csrf_token(),
+    ]);
+})->middleware(['web', 'auth', 'throttle:60,1']);
+
+// Export download endpoint - handles file downloads from exports
+Route::get('/download/export', function () {
+    $exportInfo = session()->pull('export_file');
+    
+    if (!$exportInfo || !isset($exportInfo['path']) || !file_exists($exportInfo['path'])) {
+        abort(404, 'Export file not found or expired');
+    }
+    
+    // Check if file is too old (older than 5 minutes)
+    if (isset($exportInfo['time']) && (now()->timestamp - $exportInfo['time']) > 300) {
+        if (file_exists($exportInfo['path'])) {
+            unlink($exportInfo['path']);
+        }
+        abort(410, 'Export file has expired');
+    }
+    
+    return response()->download($exportInfo['path'], $exportInfo['name'])->deleteFileAfterSend(true);
+})->middleware(['web', 'auth'])->name('download.export');
+
 /*
 |--------------------------------------------------------------------------
 | Authentication Routes
@@ -602,6 +629,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/{document}/versions', \App\Livewire\Documents\Versions::class)
             ->name('versions')
             ->middleware('can:documents.view');
+        
+        // Authenticated, permission-guarded download route
+        Route::get('/{document}/download', \App\Http\Controllers\Documents\DownloadController::class)
+            ->name('download')
+            ->middleware(['auth', 'can:documents.view']);
     });
 
     // HELPDESK MODULE
@@ -806,7 +838,7 @@ Route::middleware('auth')->group(function () {
             ->name('stores.orders')
             ->middleware('can:stores.view');
 
-        Route::get('/stores/orders/export', [StoreOrdersExportController::class, 'export'])
+        Route::get('/stores/orders/export', StoreOrdersExportController::class)
             ->name('stores.orders.export')
             ->middleware('can:stores.view');
 

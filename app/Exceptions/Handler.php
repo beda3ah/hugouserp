@@ -18,6 +18,21 @@ class Handler extends ExceptionHandler
     public function register(): void
     {
         $this->renderable(function (Throwable $e, $request) {
+            // Handle CSRF token mismatch (419) silently - refresh the page instead of showing error
+            if ($e instanceof \Illuminate\Session\TokenMismatchException) {
+                // For AJAX/Livewire requests, return JSON to trigger page refresh
+                if ($request->wantsJson() || $request->expectsJson() || $request->is('livewire/*')) {
+                    return response()->json([
+                        'message' => 'Session expired. Refreshing...',
+                        'redirect' => $request->url()
+                    ], 419);
+                }
+                
+                // For regular requests, silently refresh the page
+                return redirect($request->url())
+                    ->with('info', __('Your session was refreshed. Please try again.'));
+            }
+            
             if ($request->is('api/*') || $request->wantsJson()) {
                 return $this->renderBusinessException($e, $request);
             }

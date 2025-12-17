@@ -142,7 +142,17 @@ class Index extends Component
 
         $downloadName = $filename.'.'.$this->exportFormat;
 
-        return response()->download($filepath, $downloadName)->deleteFileAfterSend(true);
+        // Store export info in session for download
+        session()->put('export_file', [
+            'path' => $filepath,
+            'name' => $downloadName,
+            'time' => now()->timestamp,
+        ]);
+
+        // Use JavaScript to trigger download via a dedicated route
+        $this->dispatch('trigger-download', url: route('download.export'));
+
+        session()->flash('success', __('Export prepared. Download starting...'));
     }
 
     protected function getEntityTypeFromReport(): string

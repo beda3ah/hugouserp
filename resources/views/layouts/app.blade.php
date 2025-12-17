@@ -236,6 +236,129 @@
 @stack('scripts')
 
 <script>
+    // CSRF Token Refresh - Prevents 419 Session Expired Errors
+    // Refreshes the CSRF token every 30 minutes to keep sessions alive
+    (function() {
+        let livewireHookRegistered = false;
+        
+        const updateCsrfToken = (token) => {
+            // Update meta tag
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            if (metaTag) {
+                metaTag.setAttribute('content', token);
+            }
+            
+            // Update axios default header if available
+            if (window.axios) {
+                window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+            }
+            
+            // Register Livewire hook once to update CSRF token on requests
+            if (window.Livewire && !livewireHookRegistered) {
+                window.Livewire.hook('request', ({ options }) => {
+                    const currentToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                    if (currentToken) {
+                        options.headers = options.headers || {};
+                        options.headers['X-CSRF-TOKEN'] = currentToken;
+                    }
+                });
+                livewireHookRegistered = true;
+            }
+        };
+        
+        const refreshCsrfToken = async () => {
+            try {
+                const response = await fetch('/csrf-token', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    credentials: 'same-origin'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.csrf_token) {
+                        updateCsrfToken(data.csrf_token);
+                        @if(config('app.debug'))
+                        console.log('[CSRF] Token refreshed successfully');
+                        @endif
+                    }
+                } else if (response.status === 401) {
+                    // User is no longer authenticated, redirect to login
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                @if(config('app.debug'))
+                console.error('[CSRF] Error refreshing token:', error);
+                @endif
+            }
+        };
+        
+        // Refresh token every 30 minutes (1800000 ms)
+        // This ensures the token is always fresh even during long sessions
+        setInterval(refreshCsrfToken, 30 * 60 * 1000);
+        
+        // Also refresh on page visibility change (user comes back to tab)
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                refreshCsrfToken();
+            }
+        });
+        
+        // Handle 419 errors silently - auto-refresh instead of showing error
+        if (window.axios) {
+            window.axios.interceptors.response.use(
+                response => response,
+                error => {
+                    if (error.response && error.response.status === 419) {
+                        // Silently refresh the page on 419 error
+                        window.location.reload();
+                        return Promise.reject(error);
+                    }
+                    return Promise.reject(error);
+                }
+            );
+        }
+        
+        // Handle Livewire 419 errors silently
+        if (window.Livewire) {
+            document.addEventListener('livewire:init', () => {
+                Livewire.hook('request', ({ fail }) => {
+                    fail(({ status, preventDefault }) => {
+                        if (status === 419) {
+                            preventDefault();
+                            // Silently refresh the page
+                            window.location.reload();
+                        }
+                    });
+                });
+            });
+        }
+    })();
+    
+    // Handle export downloads - triggered from Livewire components
+    document.addEventListener('livewire:initialized', () => {
+        Livewire.on('trigger-download', (event) => {
+            const url = event.url || event[0]?.url || event[0];
+            if (url) {
+                // Create hidden iframe to trigger download without page navigation
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = url;
+                document.body.appendChild(iframe);
+                
+                // Remove iframe after download starts (3 seconds for larger files)
+                const IFRAME_CLEANUP_DELAY = 3000;
+                setTimeout(() => {
+                    if (document.body.contains(iframe)) {
+                        document.body.removeChild(iframe);
+                    }
+                }, IFRAME_CLEANUP_DELAY);
+            }
+        });
+    });
+    
     // Handle theme changes from UserPreferences
     document.addEventListener('livewire:initialized', () => {
         Livewire.on('theme-changed', (event) => {

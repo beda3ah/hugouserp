@@ -19,6 +19,14 @@ trait HasExport
     public bool $exportIncludeHeaders = true;
 
     public string $exportDateFormat = 'Y-m-d';
+    
+    public $exportMaxRows = 1000;
+    
+    public bool $exportRespectFilters = true;
+    
+    public bool $exportIncludeTotals = false;
+    
+    public bool $exportUseBackgroundJob = false;
 
     public function initializeExport(string $entityType): void
     {
@@ -56,7 +64,13 @@ trait HasExport
 
         $exportService = app(ExportService::class);
 
-        $exportData = collect($data)->map(function ($item) {
+        // Apply max rows limit if not 'all'
+        $collection = collect($data);
+        if ($this->exportMaxRows !== 'all' && is_numeric($this->exportMaxRows)) {
+            $collection = $collection->take((int) $this->exportMaxRows);
+        }
+
+        $exportData = $collection->map(function ($item) {
             if (is_object($item) && method_exists($item, 'toArray')) {
                 $array = $item->toArray();
             } elseif (is_object($item)) {
@@ -89,6 +103,16 @@ trait HasExport
 
         $downloadName = $filename.'.'.$this->exportFormat;
 
-        return response()->download($filepath, $downloadName)->deleteFileAfterSend(true);
+        // Store export info in session for download
+        session()->put('export_file', [
+            'path' => $filepath,
+            'name' => $downloadName,
+            'time' => now()->timestamp,
+        ]);
+
+        // Use JavaScript to trigger download via a dedicated route
+        $this->dispatch('trigger-download', url: route('download.export'));
+
+        session()->flash('success', __('Export prepared. Download starting...'));
     }
 }
