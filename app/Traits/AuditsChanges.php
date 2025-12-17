@@ -7,9 +7,9 @@ namespace App\Traits;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 
-trait LogsActivity
+trait AuditsChanges
 {
-    public static function bootLogsActivity(): void
+    public static function bootAuditsChanges(): void
     {
         static::created(function (Model $model): void {
             $model->writeAudit('created', [], $model->attributesToArray());
