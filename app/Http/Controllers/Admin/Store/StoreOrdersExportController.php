@@ -27,6 +27,7 @@ class StoreOrdersExportController extends Controller
             'to' => ['nullable', 'date'],
             'status' => ['nullable', 'string', 'max:50'],
             'source' => ['nullable', 'string', 'max:191'],
+            'branch_id' => ['nullable', 'integer', 'exists:branches,id'],
             'format' => ['required', 'string', 'in:web,excel,pdf'],
             'columns' => ['nullable', 'array'],
             'columns.*' => ['string', 'max:50'],
@@ -42,6 +43,7 @@ class StoreOrdersExportController extends Controller
             'shipping_total',
             'tax_total',
             'created_at',
+            'branch_id',
         ];
 
         if (empty($columns)) {
@@ -55,6 +57,12 @@ class StoreOrdersExportController extends Controller
         }
 
         $query = StoreOrder::query();
+
+        // Apply branch scoping - default to authenticated user's branch if not specified
+        $branchId = $validated['branch_id'] ?? $user->branch_id;
+        if ($branchId) {
+            $query->where('branch_id', $branchId);
+        }
 
         if (! empty($validated['status'])) {
             $query->where('status', $validated['status']);
@@ -84,6 +92,9 @@ class StoreOrdersExportController extends Controller
                         break;
                     case 'created_at':
                         $row[$column] = optional($order->created_at)->toDateTimeString();
+                        break;
+                    case 'branch_id':
+                        $row[$column] = $order->branch_id;
                         break;
                     default:
                         $row[$column] = $order->{$column};

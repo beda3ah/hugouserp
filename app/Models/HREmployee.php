@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class HREmployee extends BaseModel
@@ -20,6 +21,14 @@ class HREmployee extends BaseModel
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    // Many-to-many relationship with branches via pivot table
+    public function branches(): BelongsToMany
+    {
+        return $this->belongsToMany(Branch::class, 'branch_employee', 'employee_id', 'branch_id')
+            ->withPivot(['is_primary', 'assigned_at', 'detached_at'])
+            ->withTimestamps();
     }
 
     public function user(): BelongsTo
