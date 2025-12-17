@@ -1372,5 +1372,14 @@
     "Selected Columns": "الأعمدة المحددة",
     "Export Format": "صيغة التصدير",
     "Include Headers": "تضمين العناوين",
-    "Start Export": "بدء التصدير"
+    "Start Export": "بدء التصدير",
+    "Reply added successfully.": "تم إضافة الرد بنجاح.",
+    "Ticket assigned to you.": "تم تعيين التذكرة لك.",
+    "Ticket marked as resolved.": "تم وضع علامة على التذكرة كتم حلها.",
+    "Ticket must be resolved before closing.": "يجب حل التذكرة قبل إغلاقها.",
+    "Ticket closed.": "تم إغلاق التذكرة.",
+    "Ticket cannot be reopened.": "لا يمكن إعادة فتح التذكرة.",
+    "Ticket reopened.": "تم إعادة فتح التذكرة.",
+    "Ticket updated successfully.": "تم تحديث التذكرة بنجاح.",
+    "Ticket created successfully.": "تم إنشاء التذكرة بنجاح."
 }

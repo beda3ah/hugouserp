@@ -1372,5 +1372,14 @@
     "Selected Columns": "Selected Columns",
     "Export Format": "Export Format",
     "Include Headers": "Include Headers",
-    "Start Export": "Start Export"
+    "Start Export": "Start Export",
+    "Reply added successfully.": "Reply added successfully.",
+    "Ticket assigned to you.": "Ticket assigned to you.",
+    "Ticket marked as resolved.": "Ticket marked as resolved.",
+    "Ticket must be resolved before closing.": "Ticket must be resolved before closing.",
+    "Ticket closed.": "Ticket closed.",
+    "Ticket cannot be reopened.": "Ticket cannot be reopened.",
+    "Ticket reopened.": "Ticket reopened.",
+    "Ticket updated successfully.": "Ticket updated successfully.",
+    "Ticket created successfully.": "Ticket created successfully."
 }
