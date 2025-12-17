@@ -305,6 +305,36 @@
                 refreshCsrfToken();
             }
         });
+        
+        // Handle 419 errors silently - auto-refresh instead of showing error
+        if (window.axios) {
+            window.axios.interceptors.response.use(
+                response => response,
+                error => {
+                    if (error.response && error.response.status === 419) {
+                        // Silently refresh the page on 419 error
+                        window.location.reload();
+                        return Promise.reject(error);
+                    }
+                    return Promise.reject(error);
+                }
+            );
+        }
+        
+        // Handle Livewire 419 errors silently
+        if (window.Livewire) {
+            document.addEventListener('livewire:init', () => {
+                Livewire.hook('request', ({ fail }) => {
+                    fail(({ status, preventDefault }) => {
+                        if (status === 419) {
+                            preventDefault();
+                            // Silently refresh the page
+                            window.location.reload();
+                        }
+                    });
+                });
+            });
+        }
     })();
     
     // Handle theme changes from UserPreferences
