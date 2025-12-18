@@ -26,10 +26,10 @@ class Sale extends BaseModel
         'tax_total', 'shipping_total', 'shipping_method', 'tracking_number',
         'grand_total', 'paid_total', 'due_total', 'amount_paid', 'amount_due',
         'payment_status', 'payment_due_date',
-        'expected_delivery_date', 'actual_delivery_date',
+        'delivery_date', 'expected_delivery_date', 'actual_delivery_date',
         'reference_no', 'posted_at', 'sales_person',
         'store_order_id',
-        'notes', 'internal_notes', 'extra_attributes', 'created_by', 'updated_by',
+        'notes', 'customer_notes', 'internal_notes', 'extra_attributes', 'created_by', 'updated_by',
     ];
 
     protected $casts = [
@@ -45,6 +45,7 @@ class Sale extends BaseModel
         'amount_due' => 'decimal:4',
         'posted_at' => 'datetime',
         'payment_due_date' => 'date',
+        'delivery_date' => 'date',
         'expected_delivery_date' => 'date',
         'actual_delivery_date' => 'date',
         'extra_attributes' => 'array',

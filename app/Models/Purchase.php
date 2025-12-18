@@ -22,13 +22,13 @@ class Purchase extends BaseModel
     protected $fillable = [
         'uuid', 'code', 'branch_id', 'warehouse_id', 'supplier_id',
         'status', 'currency', 'sub_total', 'discount_total', 'discount_type', 'discount_value',
-        'tax_total', 'shipping_total', 'grand_total',
+        'tax_total', 'shipping_total', 'shipping_method', 'grand_total',
         'paid_total', 'due_total', 'amount_paid', 'amount_due',
         'payment_status', 'payment_due_date',
         'expected_delivery_date', 'actual_delivery_date', 'delivery_status',
         'approved_by', 'approved_at', 'requisition_number',
         'reference_no', 'posted_at',
-        'notes', 'internal_notes', 'extra_attributes', 'created_by', 'updated_by',
+        'notes', 'supplier_notes', 'internal_notes', 'extra_attributes', 'created_by', 'updated_by',
     ];
 
     protected $casts = [

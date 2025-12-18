@@ -20,7 +20,8 @@ class Customer extends BaseModel
         'address', 'city', 'country', 'company', 'external_id',
         'status', 'notes', 'loyalty_points', 'customer_tier', 'tier_updated_at',
         'balance', 'credit_limit', 'total_purchases', 'discount_percentage',
-        'payment_terms', 'payment_due_days', 'preferred_currency',
+        'payment_terms', 'payment_due_days', 'payment_terms_days', 'preferred_currency',
+        'customer_group', 'preferred_payment_method', 'last_order_date',
         'website', 'fax', 'credit_hold', 'credit_hold_reason',
         'extra_attributes', 'branch_id', 'created_by', 'updated_by',
     ];
@@ -36,6 +37,8 @@ class Customer extends BaseModel
         'total_purchases' => 'decimal:4',
         'discount_percentage' => 'decimal:4',
         'payment_due_days' => 'integer',
+        'payment_terms_days' => 'integer',
+        'last_order_date' => 'datetime',
         'credit_hold' => 'boolean',
     ];
 
