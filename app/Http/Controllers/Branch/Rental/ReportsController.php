@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Branch\Rental;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportsController extends Controller
@@ -22,30 +24,52 @@ class ReportsController extends Controller
             $query->where('property_id', $request->integer('property_id'));
         }
 
-        $filename = 'rental_occupancy_'.now()->format('Ymd_His').'.csv';
+        $filename = 'rental_occupancy_'.now()->format('Ymd_His').'.xlsx';
 
         $callback = function () use ($query) {
-            $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Property', 'Code', 'Type', 'Status', 'Rent', 'Deposit']);
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
 
-            $query->chunk(500, function ($rows) use ($handle) {
+            // Set headers
+            $headers = ['Property', 'Code', 'Type', 'Status', 'Rent', 'Deposit'];
+            $col = 1;
+            foreach ($headers as $header) {
+                $sheet->setCellValueByColumnAndRow($col, 1, $header);
+                $col++;
+            }
+
+            // Style header row
+            $headerStyle = $sheet->getStyle('1:1');
+            $headerStyle->getFont()->setBold(true);
+            $headerStyle->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setARGB('FFE0E0E0');
+
+            // Add data
+            $rowNum = 2;
+            $query->chunk(500, function ($rows) use ($sheet, &$rowNum) {
                 foreach ($rows as $row) {
-                    fputcsv($handle, [
-                        optional($row->property)->name ?? '',
-                        $row->code,
-                        $row->type,
-                        $row->status,
-                        $row->rent,
-                        $row->deposit,
-                    ]);
+                    $sheet->setCellValueByColumnAndRow(1, $rowNum, optional($row->property)->name ?? '');
+                    $sheet->setCellValueByColumnAndRow(2, $rowNum, $row->code);
+                    $sheet->setCellValueByColumnAndRow(3, $rowNum, $row->type);
+                    $sheet->setCellValueByColumnAndRow(4, $rowNum, $row->status);
+                    $sheet->setCellValueByColumnAndRow(5, $rowNum, $row->rent);
+                    $sheet->setCellValueByColumnAndRow(6, $rowNum, $row->deposit);
+                    $rowNum++;
                 }
             });
 
-            fclose($handle);
+            // Auto-size columns
+            foreach (range(1, count($headers)) as $col) {
+                $sheet->getColumnDimensionByColumn($col)->setAutoSize(true);
+            }
+
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
         };
 
         return response()->streamDownload($callback, $filename, [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
         ]);
     }
 
@@ -65,32 +89,54 @@ class ReportsController extends Controller
             ->where('status', 'active')
             ->whereDate('end_date', '<=', $threshold);
 
-        $filename = 'rental_expiring_contracts_'.now()->format('Ymd_His').'.csv';
+        $filename = 'rental_expiring_contracts_'.now()->format('Ymd_His').'.xlsx';
 
         $callback = function () use ($query) {
-            $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Property', 'Unit', 'Tenant', 'Start date', 'End date', 'Rent', 'Deposit', 'Status']);
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
 
-            $query->chunk(500, function ($rows) use ($handle) {
+            // Set headers
+            $headers = ['Property', 'Unit', 'Tenant', 'Start date', 'End date', 'Rent', 'Deposit', 'Status'];
+            $col = 1;
+            foreach ($headers as $header) {
+                $sheet->setCellValueByColumnAndRow($col, 1, $header);
+                $col++;
+            }
+
+            // Style header row
+            $headerStyle = $sheet->getStyle('1:1');
+            $headerStyle->getFont()->setBold(true);
+            $headerStyle->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setARGB('FFE0E0E0');
+
+            // Add data
+            $rowNum = 2;
+            $query->chunk(500, function ($rows) use ($sheet, &$rowNum) {
                 foreach ($rows as $row) {
-                    fputcsv($handle, [
-                        optional(optional($row->unit)->property)->name ?? '',
-                        optional($row->unit)->code ?? '',
-                        optional($row->tenant)->name ?? '',
-                        $row->start_date,
-                        $row->end_date,
-                        $row->rent,
-                        $row->deposit,
-                        $row->status,
-                    ]);
+                    $sheet->setCellValueByColumnAndRow(1, $rowNum, optional(optional($row->unit)->property)->name ?? '');
+                    $sheet->setCellValueByColumnAndRow(2, $rowNum, optional($row->unit)->code ?? '');
+                    $sheet->setCellValueByColumnAndRow(3, $rowNum, optional($row->tenant)->name ?? '');
+                    $sheet->setCellValueByColumnAndRow(4, $rowNum, $row->start_date);
+                    $sheet->setCellValueByColumnAndRow(5, $rowNum, $row->end_date);
+                    $sheet->setCellValueByColumnAndRow(6, $rowNum, $row->rent);
+                    $sheet->setCellValueByColumnAndRow(7, $rowNum, $row->deposit);
+                    $sheet->setCellValueByColumnAndRow(8, $rowNum, $row->status);
+                    $rowNum++;
                 }
             });
 
-            fclose($handle);
+            // Auto-size columns
+            foreach (range(1, count($headers)) as $col) {
+                $sheet->getColumnDimensionByColumn($col)->setAutoSize(true);
+            }
+
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
         };
 
         return response()->streamDownload($callback, $filename, [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
         ]);
     }
 }
