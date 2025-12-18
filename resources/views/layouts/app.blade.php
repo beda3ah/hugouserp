@@ -138,7 +138,7 @@
 <div class="min-h-screen flex {{ $dir === 'rtl' ? 'flex-row-reverse' : 'flex-row' }}">
 
     {{-- Sidebar --}}
-    @includeIf('layouts.sidebar')
+    @includeIf('layouts.sidebar-improved')
 
     {{-- Main --}}
     <div class="flex-1 flex flex-col min-h-screen">
