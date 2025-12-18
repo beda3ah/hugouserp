@@ -22,13 +22,13 @@
         return $user->can($permission);
     };
     
-    // Define menu structure with groups
+    // Define menu structure with groups - Comprehensive ERP Navigation
     $menuGroups = [
         [
             'title' => __('Overview'),
             'icon' => '📊',
             'items' => [
-                ['route' => 'dashboard', 'icon' => '📊', 'label' => __('ERP Dashboard'), 'permission' => 'dashboard.view', 'gradient' => 'from-red-500 to-red-600'],
+                ['route' => 'dashboard', 'icon' => '📊', 'label' => __('Dashboard'), 'permission' => 'dashboard.view', 'gradient' => 'from-red-500 to-red-600'],
             ]
         ],
         [
@@ -43,9 +43,12 @@
             'title' => __('Sales & POS'),
             'icon' => '💰',
             'items' => [
-                ['route' => 'pos.terminal', 'icon' => '🧾', 'label' => __('POS Terminal'), 'permission' => 'pos.use', 'gradient' => 'from-amber-500 to-amber-600'],
+                ['route' => 'pos.terminal', 'icon' => '🧾', 'label' => __('POS Terminal'), 'permission' => 'pos.use', 'gradient' => 'from-amber-500 to-amber-600', 'children' => [
+                    ['route' => 'pos.daily.report', 'icon' => '📑', 'label' => __('Daily Report'), 'permission' => 'pos.daily-report.view'],
+                ]],
                 ['route' => 'app.sales.index', 'icon' => '💰', 'label' => __('Sales'), 'permission' => 'sales.view', 'gradient' => 'from-green-500 to-green-600', 'children' => [
-                    ['route' => 'app.sales.returns.index', 'icon' => '↩️', 'label' => __('Sales Returns'), 'permission' => 'sales.return'],
+                    ['route' => 'app.sales.returns.index', 'icon' => '↩️', 'label' => __('Returns'), 'permission' => 'sales.return'],
+                    ['route' => 'app.sales.analytics', 'icon' => '📈', 'label' => __('Analytics'), 'permission' => 'sales.view'],
                 ]],
             ]
         ],
@@ -54,10 +57,10 @@
             'icon' => '🛒',
             'items' => [
                 ['route' => 'app.purchases.index', 'icon' => '🛒', 'label' => __('Purchases'), 'permission' => 'purchases.view', 'gradient' => 'from-purple-500 to-purple-600', 'children' => [
-                    ['route' => 'app.purchases.returns.index', 'icon' => '↩️', 'label' => __('Purchase Returns'), 'permission' => 'purchases.return'],
+                    ['route' => 'app.purchases.returns.index', 'icon' => '↩️', 'label' => __('Returns'), 'permission' => 'purchases.return'],
                 ]],
                 ['route' => 'app.expenses.index', 'icon' => '📋', 'label' => __('Expenses'), 'permission' => 'expenses.view', 'gradient' => 'from-slate-500 to-slate-600', 'children' => [
-                    ['route' => 'app.expenses.categories.index', 'icon' => '📂', 'label' => __('Expense Categories'), 'permission' => 'expenses.view'],
+                    ['route' => 'app.expenses.categories.index', 'icon' => '📂', 'label' => __('Categories'), 'permission' => 'expenses.view'],
                 ]],
             ]
         ],
@@ -65,41 +68,69 @@
             'title' => __('Inventory & Warehouse'),
             'icon' => '📦',
             'items' => [
-                ['route' => 'app.inventory.products.index', 'icon' => '📦', 'label' => __('Inventory'), 'permission' => 'inventory.products.view', 'gradient' => 'from-teal-500 to-teal-600', 'children' => [
+                ['route' => 'app.inventory.products.index', 'icon' => '📦', 'label' => __('Products'), 'permission' => 'inventory.products.view', 'gradient' => 'from-teal-500 to-teal-600', 'children' => [
                     ['route' => 'app.inventory.categories.index', 'icon' => '📂', 'label' => __('Categories'), 'permission' => 'inventory.products.view'],
                     ['route' => 'app.inventory.units.index', 'icon' => '📏', 'label' => __('Units'), 'permission' => 'inventory.products.view'],
-                    ['route' => 'app.inventory.stock-alerts', 'icon' => '⚠️', 'label' => __('Low Stock'), 'permission' => 'inventory.stock.alerts.view'],
+                    ['route' => 'app.inventory.stock-alerts', 'icon' => '⚠️', 'label' => __('Stock Alerts'), 'permission' => 'inventory.stock.alerts.view'],
                     ['route' => 'app.inventory.barcodes', 'icon' => '🏷️', 'label' => __('Barcodes'), 'permission' => 'inventory.products.view'],
+                    ['route' => 'app.inventory.batches.index', 'icon' => '📦', 'label' => __('Batches'), 'permission' => 'inventory.products.view'],
+                    ['route' => 'app.inventory.serials.index', 'icon' => '🔢', 'label' => __('Serials'), 'permission' => 'inventory.products.view'],
+                    ['route' => 'app.inventory.vehicle-models', 'icon' => '🚗', 'label' => __('Vehicle Models'), 'permission' => 'spares.compatibility.manage'],
                 ]],
                 ['route' => 'app.warehouse.index', 'icon' => '🏭', 'label' => __('Warehouse'), 'permission' => 'warehouse.view', 'gradient' => 'from-orange-500 to-orange-600'],
             ]
         ],
         [
-            'title' => __('Finance'),
+            'title' => __('Finance & Banking'),
             'icon' => '💵',
             'items' => [
                 ['route' => 'app.accounting.index', 'icon' => '🧮', 'label' => __('Accounting'), 'permission' => 'accounting.view', 'gradient' => 'from-indigo-500 to-indigo-600'],
                 ['route' => 'app.income.index', 'icon' => '💵', 'label' => __('Income'), 'permission' => 'income.view', 'gradient' => 'from-emerald-500 to-emerald-600', 'children' => [
-                    ['route' => 'app.income.categories.index', 'icon' => '📂', 'label' => __('Income Categories'), 'permission' => 'income.view'],
+                    ['route' => 'app.income.categories.index', 'icon' => '📂', 'label' => __('Categories'), 'permission' => 'income.view'],
                 ]],
-                ['route' => 'admin.branches.index', 'icon' => '🏢', 'label' => __('Branches'), 'permission' => 'branches.view', 'gradient' => 'from-blue-500 to-blue-600'],
+                ['route' => 'app.banking.accounts.index', 'icon' => '🏦', 'label' => __('Banking'), 'permission' => 'banking.view', 'gradient' => 'from-blue-500 to-blue-600'],
+                ['route' => 'admin.branches.index', 'icon' => '🏢', 'label' => __('Branches'), 'permission' => 'branches.view', 'gradient' => 'from-blue-600 to-blue-700'],
+            ]
+        ],
+        [
+            'title' => __('Human Resources'),
+            'icon' => '👥',
+            'items' => [
+                ['route' => 'app.hrm.employees.index', 'icon' => '👥', 'label' => __('Employees'), 'permission' => 'hrm.employees.view', 'gradient' => 'from-rose-500 to-rose-600', 'children' => [
+                    ['route' => 'app.hrm.attendance.index', 'icon' => '📅', 'label' => __('Attendance'), 'permission' => 'hrm.attendance.view'],
+                    ['route' => 'app.hrm.shifts.index', 'icon' => '⏰', 'label' => __('Shifts'), 'permission' => 'hrm.shifts.view'],
+                    ['route' => 'app.hrm.payroll.index', 'icon' => '💰', 'label' => __('Payroll'), 'permission' => 'hrm.payroll.view'],
+                    ['route' => 'app.hrm.reports', 'icon' => '📊', 'label' => __('HR Reports'), 'permission' => 'hrm.reports.view'],
+                ]],
             ]
         ],
         [
             'title' => __('Operations'),
             'icon' => '⚙️',
             'items' => [
-                ['route' => 'app.hrm.index', 'icon' => '👥', 'label' => __('HR'), 'permission' => 'hrm.employees.view', 'gradient' => 'from-rose-500 to-rose-600'],
                 ['route' => 'app.rental.properties.index', 'icon' => '🏠', 'label' => __('Rental'), 'permission' => 'rental.units.view', 'gradient' => 'from-sky-500 to-sky-600', 'children' => [
                     ['route' => 'app.rental.properties.index', 'icon' => '🏢', 'label' => __('Properties'), 'permission' => 'rental.properties.view'],
+                    ['route' => 'app.rental.units.index', 'icon' => '🚪', 'label' => __('Units'), 'permission' => 'rental.units.view'],
                     ['route' => 'app.rental.tenants.index', 'icon' => '👤', 'label' => __('Tenants'), 'permission' => 'rental.tenants.view'],
                     ['route' => 'app.rental.contracts.index', 'icon' => '📄', 'label' => __('Contracts'), 'permission' => 'rental.contracts.view'],
                 ]],
                 ['route' => 'app.manufacturing.boms.index', 'icon' => '🏭', 'label' => __('Manufacturing'), 'permission' => 'manufacturing.view', 'gradient' => 'from-gray-500 to-gray-600', 'children' => [
                     ['route' => 'app.manufacturing.boms.index', 'icon' => '📋', 'label' => __('BOMs'), 'permission' => 'manufacturing.view'],
                     ['route' => 'app.manufacturing.orders.index', 'icon' => '⚙️', 'label' => __('Orders'), 'permission' => 'manufacturing.view'],
+                    ['route' => 'app.manufacturing.work-centers.index', 'icon' => '🔧', 'label' => __('Work Centers'), 'permission' => 'manufacturing.view'],
                 ]],
-                ['route' => 'app.fixed-assets.index', 'icon' => '🏢', 'label' => __('Fixed Assets'), 'permission' => 'fixed-assets.view', 'gradient' => 'from-stone-500 to-stone-600'],
+                ['route' => 'app.fixed-assets.index', 'icon' => '🏗️', 'label' => __('Fixed Assets'), 'permission' => 'fixed-assets.view', 'gradient' => 'from-stone-500 to-stone-600'],
+            ]
+        ],
+        [
+            'title' => __('Reports'),
+            'icon' => '📊',
+            'items' => [
+                ['route' => 'admin.reports.index', 'icon' => '📊', 'label' => __('Reports'), 'permission' => 'reports.view', 'gradient' => 'from-purple-500 to-purple-600', 'children' => [
+                    ['route' => 'admin.reports.inventory', 'icon' => '📦', 'label' => __('Inventory'), 'permission' => 'reports.view'],
+                    ['route' => 'admin.reports.pos', 'icon' => '🧾', 'label' => __('POS'), 'permission' => 'reports.view'],
+                    ['route' => 'admin.reports.scheduled', 'icon' => '📅', 'label' => __('Scheduled'), 'permission' => 'reports.view'],
+                ]],
             ]
         ],
         [
@@ -110,7 +141,18 @@
                 ['route' => 'admin.users.index', 'icon' => '👥', 'label' => __('Users'), 'permission' => 'users.manage', 'gradient' => 'from-pink-500 to-pink-600'],
                 ['route' => 'admin.roles.index', 'icon' => '🔐', 'label' => __('Roles'), 'permission' => 'roles.manage', 'gradient' => 'from-violet-500 to-violet-600'],
                 ['route' => 'admin.modules.index', 'icon' => '🧩', 'label' => __('Modules'), 'permission' => 'modules.manage', 'gradient' => 'from-fuchsia-500 to-fuchsia-600'],
-                ['route' => 'admin.stores.index', 'icon' => '🔗', 'label' => __('Store Integrations'), 'permission' => 'store.manage', 'gradient' => 'from-indigo-500 to-indigo-600'],
+                ['route' => 'admin.stores.index', 'icon' => '🔗', 'label' => __('Store Integration'), 'permission' => 'store.manage', 'gradient' => 'from-indigo-500 to-indigo-600', 'children' => [
+                    ['route' => 'admin.stores.orders', 'icon' => '📦', 'label' => __('Store Orders'), 'permission' => 'store.manage'],
+                    ['route' => 'admin.api-docs', 'icon' => '📖', 'label' => __('API Docs'), 'permission' => 'store.manage'],
+                ]],
+                ['route' => 'admin.translations.index', 'icon' => '🌍', 'label' => __('Translations'), 'permission' => 'settings.view', 'gradient' => 'from-cyan-500 to-cyan-600'],
+                ['route' => 'admin.currencies.index', 'icon' => '💱', 'label' => __('Currencies'), 'permission' => 'settings.view', 'gradient' => 'from-yellow-500 to-yellow-600', 'children' => [
+                    ['route' => 'admin.currency-rates.index', 'icon' => '📈', 'label' => __('Exchange Rates'), 'permission' => 'settings.view'],
+                ]],
+                ['route' => 'admin.media.index', 'icon' => '🖼️', 'label' => __('Media Library'), 'permission' => 'settings.view', 'gradient' => 'from-rose-500 to-rose-600'],
+                ['route' => 'admin.logs.audit', 'icon' => '📜', 'label' => __('Audit Logs'), 'permission' => 'logs.audit.view', 'gradient' => 'from-gray-500 to-gray-600', 'children' => [
+                    ['route' => 'admin.activity-log', 'icon' => '📋', 'label' => __('Activity Log'), 'permission' => 'logs.audit.view'],
+                ]],
             ]
         ],
     ];
