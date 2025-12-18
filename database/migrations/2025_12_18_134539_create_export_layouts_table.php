@@ -38,15 +38,29 @@ return new class extends Migration
         } else {
             // Table exists, ensure indexes are present
             Schema::table('export_layouts', function (Blueprint $table) {
-                // Check and add missing indexes
-                if (!$this->indexExists('export_layouts', 'export_layouts_user_id_entity_type_index')) {
-                    $table->index(['user_id', 'entity_type']);
+                // Check and add missing indexes - wrap in try-catch for safety
+                try {
+                    if (!$this->indexExists('export_layouts', 'export_layouts_user_id_entity_type_index')) {
+                        $table->index(['user_id', 'entity_type']);
+                    }
+                } catch (\Exception $e) {
+                    // Index may already exist with different name
                 }
-                if (!$this->indexExists('export_layouts', 'export_layouts_user_id_is_default_index')) {
-                    $table->index(['user_id', 'is_default']);
+                
+                try {
+                    if (!$this->indexExists('export_layouts', 'export_layouts_user_id_is_default_index')) {
+                        $table->index(['user_id', 'is_default']);
+                    }
+                } catch (\Exception $e) {
+                    // Index may already exist with different name
                 }
-                if (!$this->indexExists('export_layouts', 'export_layouts_user_id_entity_type_layout_name_unique')) {
-                    $table->unique(['user_id', 'entity_type', 'layout_name']);
+                
+                try {
+                    if (!$this->indexExists('export_layouts', 'export_layouts_user_id_entity_type_layout_name_unique')) {
+                        $table->unique(['user_id', 'entity_type', 'layout_name']);
+                    }
+                } catch (\Exception $e) {
+                    // Unique constraint may already exist with different name
                 }
             });
         }
