@@ -316,7 +316,7 @@ class AccountingService
                 $account = $line->account;
                 $netChange = $line->credit - $line->debit; // Reversed
 
-                if (in_array($account->type, ['asset', 'expense'])) {
+                if (in_array($account->type, ['asset', 'expense'], true)) {
                     $account->increment('balance', $netChange);
                 } else {
                     $account->decrement('balance', $netChange);
