@@ -31,6 +31,8 @@ class PosReportsExportController extends Controller
             'channel' => ['nullable', 'string', 'max:50'],
             'min_total' => ['nullable', 'numeric'],
             'format' => ['nullable', 'in:web,excel,pdf'],
+            'columns' => ['nullable', 'array'],
+            'columns.*' => ['string'],
         ]);
 
         $format = $validated['format'] ?? 'web';
@@ -63,7 +65,8 @@ class PosReportsExportController extends Controller
 
         $sales = $query->with('branch')->orderBy('posted_at')->limit(5000)->get();
 
-        $columns = [
+        // Available columns with labels
+        $availableColumns = [
             'id' => 'ID',
             'posted_at' => 'Date',
             'branch_name' => 'Branch',
@@ -74,8 +77,23 @@ class PosReportsExportController extends Controller
             'due_total' => 'Due',
         ];
 
-        $rows = $sales->map(function (Sale $sale) {
-            return [
+        // Use selected columns or all columns
+        $requestedColumns = $validated['columns'] ?? array_keys($availableColumns);
+        $columns = array_intersect_key($availableColumns, array_flip($requestedColumns));
+        
+        // Preserve order of requested columns
+        if (! empty($validated['columns'])) {
+            $orderedColumns = [];
+            foreach ($validated['columns'] as $col) {
+                if (isset($availableColumns[$col])) {
+                    $orderedColumns[$col] = $availableColumns[$col];
+                }
+            }
+            $columns = $orderedColumns;
+        }
+
+        $rows = $sales->map(function (Sale $sale) use ($columns) {
+            $row = [
                 'id' => $sale->id,
                 'posted_at' => optional($sale->posted_at ?? $sale->created_at)->format('Y-m-d H:i'),
                 'branch_name' => optional($sale->branch)->name ?? '-',
@@ -85,6 +103,9 @@ class PosReportsExportController extends Controller
                 'paid_total' => $sale->paid_total,
                 'due_total' => $sale->due_total,
             ];
+
+            // Return only selected columns
+            return array_intersect_key($row, $columns);
         })->toArray();
 
         if ($format === 'excel') {

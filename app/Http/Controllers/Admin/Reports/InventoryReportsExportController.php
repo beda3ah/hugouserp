@@ -27,6 +27,8 @@ class InventoryReportsExportController extends Controller
             'branch_id' => ['nullable', 'integer'],
             'only_low' => ['nullable', 'boolean'],
             'format' => ['nullable', 'in:web,excel,pdf'],
+            'columns' => ['nullable', 'array'],
+            'columns.*' => ['string'],
         ]);
 
         $format = $validated['format'] ?? 'web';
@@ -39,7 +41,8 @@ class InventoryReportsExportController extends Controller
 
         $products = $query->orderBy('name')->limit(5000)->get();
 
-        $columns = [
+        // Available columns with labels
+        $availableColumns = [
             'id' => 'ID',
             'sku' => 'SKU',
             'name' => 'Name',
@@ -47,7 +50,22 @@ class InventoryReportsExportController extends Controller
             'reorder_level' => 'Reorder Level',
         ];
 
-        $rows = $products->map(function (Product $product) use ($validated) {
+        // Use selected columns or all columns
+        $requestedColumns = $validated['columns'] ?? array_keys($availableColumns);
+        $columns = array_intersect_key($availableColumns, array_flip($requestedColumns));
+        
+        // Preserve order of requested columns
+        if (! empty($validated['columns'])) {
+            $orderedColumns = [];
+            foreach ($validated['columns'] as $col) {
+                if (isset($availableColumns[$col])) {
+                    $orderedColumns[$col] = $availableColumns[$col];
+                }
+            }
+            $columns = $orderedColumns;
+        }
+
+        $rows = $products->map(function (Product $product) use ($validated, $columns) {
             $stock = $product->stock_qty ?? 0;
             $reorder = $product->reorder_level ?? 0;
 
@@ -55,13 +73,16 @@ class InventoryReportsExportController extends Controller
                 return null;
             }
 
-            return [
+            $row = [
                 'id' => $product->id,
                 'sku' => $product->sku,
                 'name' => $product->name,
                 'stock_qty' => $stock,
                 'reorder_level' => $reorder,
             ];
+
+            // Return only selected columns
+            return array_intersect_key($row, $columns);
         })->filter()->values()->toArray();
 
         if ($format === 'excel') {
