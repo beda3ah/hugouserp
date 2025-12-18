@@ -138,7 +138,9 @@ class HRMService implements HRMServiceInterface
 
         $insurableSalary = min($grossSalary, $maxSalary);
 
-        return round($insurableSalary * $rate, 2);
+        // Use bcmath for precise social insurance calculation
+        $insurance = bcmul((string) $insurableSalary, (string) $rate, 4);
+        return (float) bcdiv($insurance, '1', 2);
     }
 
     protected function calculateTax(float $taxableIncome): float
@@ -156,17 +158,22 @@ class HRMService implements HRMServiceInterface
         ]);
 
         $previousLimit = 0;
+        $annualTaxString = '0.00';
         foreach ($brackets as $bracket) {
             if ($annualIncome <= $previousLimit) {
                 break;
             }
 
             $taxableInBracket = min($annualIncome, $bracket['limit']) - $previousLimit;
-            $annualTax += max(0, $taxableInBracket) * $bracket['rate'];
+            // Use bcmath for precise tax bracket calculation
+            $bracketTax = bcmul((string) max(0, $taxableInBracket), (string) $bracket['rate'], 4);
+            $annualTaxString = bcadd($annualTaxString, $bracketTax, 4);
             $previousLimit = $bracket['limit'];
         }
 
-        return round($annualTax / 12, 2);
+        // Use bcmath for precise monthly tax calculation
+        $monthlyTax = bcdiv($annualTaxString, '12', 4);
+        return (float) bcdiv($monthlyTax, '1', 2);
     }
 
     protected function calculateAbsenceDeduction(HREmployee $emp, string $period): float

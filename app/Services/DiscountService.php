@@ -57,13 +57,14 @@ class DiscountService implements DiscountServiceInterface
 
                 $discount = $this->sanitize($discount, $percent);
 
+                // Use bcmath for precise discount calculation
                 $discTotal = $percent
-                    ? ($subtotal * ($discount / 100))
-                    : $discount;
+                    ? bcmul((string) $subtotal, bcdiv((string) $discount, '100', 6), 6)
+                    : (string) $discount;
 
-                $discTotal = min(max($discTotal, 0.0), $subtotal);
+                $discTotal = min(max((float) $discTotal, 0.0), $subtotal);
 
-                return round($discTotal, 2);
+                return (float) bcdiv((string) $discTotal, '1', 2);
             },
             operation: 'lineTotal',
             context: ['qty' => $qty, 'price' => $price, 'discount' => $discount, 'percent' => $percent],
