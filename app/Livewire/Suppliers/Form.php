@@ -39,6 +39,18 @@ class Form extends Component
 
     public string $notes = '';
 
+    public string $payment_terms = '';
+
+    public float $minimum_order_value = 0;
+
+    public string $supplier_rating = '';
+
+    public float $quality_rating = 0;
+
+    public float $delivery_rating = 0;
+
+    public float $service_rating = 0;
+
     public bool $is_active = true;
 
     protected function rules(): array
@@ -71,6 +83,12 @@ class Form extends Component
             'company_name' => ['nullable', 'string', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'payment_terms' => ['nullable', 'in:immediate,net15,net30,net60,net90'],
+            'minimum_order_value' => ['nullable', 'numeric', 'min:0'],
+            'supplier_rating' => ['nullable', 'string', 'max:191'],
+            'quality_rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
+            'delivery_rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
+            'service_rating' => ['nullable', 'numeric', 'min:0', 'max:5'],
             'is_active' => ['boolean'],
         ];
     }
