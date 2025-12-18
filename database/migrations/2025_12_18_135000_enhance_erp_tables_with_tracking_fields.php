@@ -15,17 +15,18 @@ return new class extends Migration
         if (Schema::hasTable('sales')) {
             Schema::table('sales', function (Blueprint $table) {
                 // Only add columns that don't exist yet
+                // Use 'posted_at' as reference since it's in the original table
                 if (!Schema::hasColumn('sales', 'delivery_date')) {
                     $table->date('delivery_date')->nullable()->after('posted_at');
                 }
                 if (!Schema::hasColumn('sales', 'shipping_method')) {
-                    $table->string('shipping_method')->nullable()->after('delivery_date');
+                    $table->string('shipping_method')->nullable()->after('posted_at');
                 }
                 if (!Schema::hasColumn('sales', 'customer_notes')) {
                     $table->text('customer_notes')->nullable()->after('notes');
                 }
                 if (!Schema::hasColumn('sales', 'internal_notes')) {
-                    $table->text('internal_notes')->nullable()->after('customer_notes');
+                    $table->text('internal_notes')->nullable()->after('notes');
                 }
             });
         }
@@ -34,14 +35,15 @@ return new class extends Migration
         if (Schema::hasTable('purchases')) {
             Schema::table('purchases', function (Blueprint $table) {
                 // Only add columns that don't exist yet
+                // Use 'posted_at' as reference since it's in the original table
                 if (!Schema::hasColumn('purchases', 'expected_delivery_date')) {
                     $table->date('expected_delivery_date')->nullable()->after('posted_at');
                 }
                 if (!Schema::hasColumn('purchases', 'actual_delivery_date')) {
-                    $table->date('actual_delivery_date')->nullable()->after('expected_delivery_date');
+                    $table->date('actual_delivery_date')->nullable()->after('posted_at');
                 }
                 if (!Schema::hasColumn('purchases', 'shipping_method')) {
-                    $table->string('shipping_method')->nullable()->after('actual_delivery_date');
+                    $table->string('shipping_method')->nullable()->after('posted_at');
                 }
                 if (!Schema::hasColumn('purchases', 'supplier_notes')) {
                     $table->text('supplier_notes')->nullable()->after('notes');
@@ -73,18 +75,18 @@ return new class extends Migration
         if (Schema::hasTable('customers')) {
             Schema::table('customers', function (Blueprint $table) {
                 // Only add columns that don't exist yet
-                // Note: payment_terms and discount_percentage already added by earlier migration
+                // Use 'credit_limit' and 'status' as stable reference columns from original table
                 if (!Schema::hasColumn('customers', 'payment_terms_days')) {
                     $table->integer('payment_terms_days')->default(30)->after('credit_limit');
                 }
                 if (!Schema::hasColumn('customers', 'customer_group')) {
-                    $table->string('customer_group')->nullable()->after('discount_percentage');
+                    $table->string('customer_group')->nullable()->after('status');
                 }
                 if (!Schema::hasColumn('customers', 'preferred_payment_method')) {
-                    $table->string('preferred_payment_method')->nullable()->after('customer_group');
+                    $table->string('preferred_payment_method')->nullable()->after('status');
                 }
                 if (!Schema::hasColumn('customers', 'last_order_date')) {
-                    $table->timestamp('last_order_date')->nullable()->after('preferred_payment_method');
+                    $table->timestamp('last_order_date')->nullable()->after('status');
                 }
             });
         }
@@ -93,15 +95,15 @@ return new class extends Migration
         if (Schema::hasTable('suppliers')) {
             Schema::table('suppliers', function (Blueprint $table) {
                 // Only add columns that don't exist yet
-                // Note: payment_terms and average_lead_time_days already added by earlier migration
+                // Use 'is_active' as stable reference column from original table
                 if (!Schema::hasColumn('suppliers', 'minimum_order_value')) {
-                    $table->decimal('minimum_order_value', 10, 2)->nullable()->after('average_lead_time_days');
+                    $table->decimal('minimum_order_value', 10, 2)->nullable()->after('is_active');
                 }
                 if (!Schema::hasColumn('suppliers', 'supplier_rating')) {
-                    $table->string('supplier_rating')->nullable()->after('minimum_order_value');
+                    $table->string('supplier_rating')->nullable()->after('is_active');
                 }
                 if (!Schema::hasColumn('suppliers', 'last_purchase_date')) {
-                    $table->timestamp('last_purchase_date')->nullable()->after('supplier_rating');
+                    $table->timestamp('last_purchase_date')->nullable()->after('is_active');
                 }
             });
         }
