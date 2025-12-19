@@ -270,7 +270,7 @@ class OrdersController extends BaseApiController
             return $this->errorResponse(__('Invalid status transition'), 422);
         }
 
-        if ($next === 'completed' && $order->due_total > 0) {
+        if ($next === 'completed' && bccomp((string) $order->due_total, '0', 4) === 1) {
             return $this->errorResponse(__('Cannot complete unpaid order'), 422);
         }
 

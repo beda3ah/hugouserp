@@ -84,7 +84,7 @@ class Edit extends Component
         $user = Auth::user();
 
         $this->validate([
-            'avatar' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+            'avatar' => ['required', 'image', 'mimes:jpeg,png,webp', 'max:2048'],
         ]);
 
         if ($this->currentAvatar) {
