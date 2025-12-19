@@ -17,7 +17,7 @@ class Show extends Component
     public function mount(Purchase $purchase): void
     {
         $user = auth()->user();
-        abort_if(!$user || !$user->can('purchases.view'), 403);
+        throw_if(!$user || !$user->can('purchases.view'), new HttpException(403));
 
         $branchId = (int) $user->branch_id;
         $isSuperAdmin = (bool) $user->hasRole('super-admin');

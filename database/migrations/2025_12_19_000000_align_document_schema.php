@@ -51,6 +51,10 @@ return new class extends Migration
             $driver = Schema::getConnection()->getDriverName();
             if (in_array($driver, ['mysql', 'mariadb'])) {
                 DB::statement("ALTER TABLE document_activities MODIFY action ENUM('created','viewed','downloaded','edited','shared','unshared','deleted','restored','version_created') NOT NULL");
+            } elseif ($driver === 'sqlite') {
+                // SQLite rebuilds tables during migration refresh; the base migration already includes the new value.
+            } else {
+                logger()->warning('Document activities action enum not automatically altered for this driver', ['driver' => $driver]);
             }
         }
     }
