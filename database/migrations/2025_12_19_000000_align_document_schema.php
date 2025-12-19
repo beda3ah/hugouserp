@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    private const DOCUMENT_ACTIONS = ['created', 'viewed', 'downloaded', 'edited', 'shared', 'unshared', 'deleted', 'restored', 'version_created'];
+
     public function up(): void
     {
         Schema::table('documents', function (Blueprint $table) {
@@ -46,6 +48,19 @@ return new class extends Migration
         });
 
         DB::statement('UPDATE document_shares SET user_id = shared_with_user_id WHERE user_id IS NULL AND shared_with_user_id IS NOT NULL');
+
+        if (Schema::hasTable('document_activities')) {
+            $pdo = Schema::getConnection()->getPdo();
+            $actionEnumList = implode(',', array_map(fn ($value) => $pdo->quote($value), self::DOCUMENT_ACTIONS));
+            $driver = Schema::getConnection()->getDriverName();
+            if (in_array($driver, ['mysql', 'mariadb'])) {
+                DB::statement("ALTER TABLE document_activities MODIFY action ENUM({$actionEnumList}) NOT NULL");
+            } elseif ($driver === 'sqlite') {
+                // SQLite stores enums as TEXT without strict constraints, so the base migration already permits the new value.
+            } else {
+                logger()->warning('Document activities action enum not automatically altered for this driver', ['driver' => $driver]);
+            }
+        }
     }
 
     public function down(): void
