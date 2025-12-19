@@ -55,7 +55,7 @@ return new class extends Migration
             if (in_array($driver, ['mysql', 'mariadb'])) {
                 DB::statement("ALTER TABLE document_activities MODIFY action ENUM({$actionEnumList}) NOT NULL");
             } elseif ($driver === 'sqlite') {
-                // SQLite rebuilds tables during migration refresh; the base migration already includes the new value.
+                // SQLite stores enums as TEXT without strict constraints, so the base migration already permits the new value.
             } else {
                 logger()->warning('Document activities action enum not automatically altered for this driver', ['driver' => $driver]);
             }

@@ -20,7 +20,7 @@ class Show extends Component
         throw_if(!$user?->can('sales.view'), new HttpException(403));
 
         $branchId = $user?->branch_id;
-        $isSuperAdmin = (bool) $user->hasRole('super-admin');
+        $isSuperAdmin = (bool) $user?->hasRole('super-admin');
         $branchIdInt = $branchId !== null ? (int) $branchId : null;
 
         throw_if(!$isSuperAdmin && $branchIdInt === null, new HttpException(403, __('You must be assigned to a branch to view sales.')));
