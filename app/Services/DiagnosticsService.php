@@ -86,11 +86,15 @@ class DiagnosticsService
             // For database driver, check if jobs table exists
             if ($connection === 'database') {
                 $table = Config::get('queue.connections.database.table', 'jobs');
-                $exists = DB::getSchemaBuilder()->hasTable($table);
+                $dbConnection = Config::get('queue.connections.database.connection', Config::get('database.default'));
+                $schema = DB::connection($dbConnection)->getSchemaBuilder();
+
+                $exists = $schema->hasTable($table);
 
                 return [
                     'status' => $exists ? 'ok' : 'warning',
                     'driver' => $connection,
+                    'connection' => $dbConnection,
                     'message' => $exists 
                         ? 'Queue is operational' 
                         : "Queue table '{$table}' does not exist",
