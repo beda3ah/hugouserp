@@ -26,7 +26,7 @@ return new class extends Migration
             Schema::table('customers', function (Blueprint $table): void {
                 // Add general address column if it doesn't exist (model expects this)
                 if (!Schema::hasColumn('customers', 'address')) {
-                    $table->text('address')->nullable()->after('shipping_address')->comment('General address');
+                    $table->string('address')->nullable()->after('shipping_address')->comment('General address');
                 }
             });
 
@@ -42,11 +42,11 @@ return new class extends Migration
                 }
                 // Add company after country
                 if (!Schema::hasColumn('customers', 'company')) {
-                    $table->string('company')->nullable()->after('country')->comment('Company name');
+                    $table->string('company', 255)->nullable()->after('country')->comment('Company name');
                 }
                 // Add external_id after company
                 if (!Schema::hasColumn('customers', 'external_id')) {
-                    $table->string('external_id')->nullable()->after('company')->comment('External system ID');
+                    $table->string('external_id', 100)->nullable()->after('company')->comment('External system ID');
                 }
             });
         }
