@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
@@ -15,7 +16,7 @@ return new class extends Migration
             // Drop the foreign key constraint first (with safety check)
             try {
                 $table->dropForeign(['module_id']);
-            } catch (\Exception $e) {
+            } catch (QueryException $e) {
                 // Foreign key may not exist, continue
             }
 
@@ -34,7 +35,7 @@ return new class extends Migration
             // Drop the foreign key (with safety check)
             try {
                 $table->dropForeign(['module_id']);
-            } catch (\Exception $e) {
+            } catch (QueryException $e) {
                 // Foreign key may not exist, continue
             }
 

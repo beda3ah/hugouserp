@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
@@ -29,7 +30,7 @@ return new class extends Migration
             if (Schema::hasColumn('workflow_notifications', 'workflow_approval_id')) {
                 try {
                     $table->dropForeign(['workflow_approval_id']);
-                } catch (\Exception $e) {
+                } catch (QueryException $e) {
                     // Foreign key may not exist, continue
                 }
                 $table->foreign('workflow_approval_id')
@@ -66,7 +67,7 @@ return new class extends Migration
             if (Schema::hasColumn('workflow_notifications', 'workflow_approval_id')) {
                 try {
                     $table->dropForeign(['workflow_approval_id']);
-                } catch (\Exception $e) {
+                } catch (QueryException $e) {
                     // Foreign key may not exist, continue
                 }
                 $table->foreign('workflow_approval_id')
@@ -86,7 +87,7 @@ return new class extends Migration
             if (Schema::hasColumn('workflow_instances', 'branch_id')) {
                 try {
                     $table->dropForeign(['branch_id']);
-                } catch (\Exception $e) {
+                } catch (QueryException $e) {
                     // Foreign key may not exist, continue
                 }
                 $table->foreign('branch_id')
