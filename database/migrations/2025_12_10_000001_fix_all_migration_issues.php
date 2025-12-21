@@ -29,13 +29,13 @@ return new class extends Migration
                 $this->safeDropIndex('audit_logs', 'audit_logs_auditable_idx');
                 $this->safeDropIndex('audit_logs', 'audit_logs_event_idx');
                 $this->safeDropIndex('audit_logs', 'audit_logs_auditable_index');
-                
+
                 // Add correct indexes on actual columns
-                if (Schema::hasColumn('audit_logs', 'subject_type') && 
+                if (Schema::hasColumn('audit_logs', 'subject_type') &&
                     Schema::hasColumn('audit_logs', 'subject_id')) {
                     $this->safeAddIndex($table, ['subject_type', 'subject_id'], 'audit_logs_subject_idx', 'audit_logs');
                 }
-                
+
                 if (Schema::hasColumn('audit_logs', 'action')) {
                     $this->safeAddIndex($table, 'action', 'audit_logs_action_idx', 'audit_logs');
                 }
@@ -64,7 +64,7 @@ return new class extends Migration
             Schema::table('rental_invoices', function (Blueprint $table) {
                 // Drop incorrect tenant_id index if it exists
                 $this->safeDropIndex('rental_invoices', ['tenant_id']);
-                
+
                 // Add correct index on contract_id (may already exist as FK)
                 if (Schema::hasColumn('rental_invoices', 'contract_id')) {
                     $this->safeAddIndex($table, 'contract_id', 'rental_invoices_contract_idx', 'rental_invoices');
@@ -76,7 +76,7 @@ return new class extends Migration
         if (Schema::hasTable('tickets')) {
             // First, drop the incorrect foreign key if it exists
             $this->safeDropForeignKey('tickets', 'tickets_customer_id_foreign');
-            
+
             Schema::table('tickets', function (Blueprint $table) {
                 // Re-add the foreign key pointing to customers
                 if (Schema::hasColumn('tickets', 'customer_id') && Schema::hasTable('customers')) {
@@ -92,7 +92,7 @@ return new class extends Migration
         if (Schema::hasTable('projects')) {
             // First, drop the incorrect foreign key if it exists
             $this->safeDropForeignKey('projects', 'projects_client_id_foreign');
-            
+
             Schema::table('projects', function (Blueprint $table) {
                 // Re-add the foreign key pointing to customers
                 if (Schema::hasColumn('projects', 'client_id') && Schema::hasTable('customers')) {
@@ -141,7 +141,7 @@ return new class extends Migration
     {
         try {
             $indexName = is_array($index) ? null : $index;
-            
+
             if (is_array($index)) {
                 // For column-based indexes, let Blueprint handle the name
                 Schema::table($table, function (Blueprint $blueprint) use ($index) {
@@ -174,7 +174,7 @@ return new class extends Migration
             if ($indexName && $tableName && $this->indexExists($tableName, $indexName)) {
                 return;
             }
-            
+
             if ($indexName) {
                 $table->index($columns, $indexName);
             } else {

@@ -24,7 +24,7 @@ return new class extends Migration
 
             $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
             $table->foreign('employee_id')->references('id')->on('hr_employees')->onDelete('cascade');
-            
+
             $table->unique(['branch_id', 'employee_id']);
             $table->index('is_primary');
         });
@@ -41,11 +41,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('branch_employee');
-        
+
         // Restore branch_id to not nullable (with safe fallback to first branch)
         if (Schema::hasTable('hr_employees')) {
             DB::statement('UPDATE hr_employees SET branch_id = (SELECT MIN(id) FROM branches) WHERE branch_id IS NULL');
-            
+
             Schema::table('hr_employees', function (Blueprint $table) {
                 $table->unsignedBigInteger('branch_id')->nullable(false)->change();
             });

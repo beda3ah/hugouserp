@@ -9,7 +9,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * BUG FIX: Ensure all modules that should support items have the flag set properly.
      * This fixes the issue where module dropdown is empty when adding products.
      */
@@ -19,10 +19,10 @@ return new class extends Migration
         DB::table('modules')
             ->whereIn('key', [
                 'inventory',
-                'rental', 
-                'pos', 
-                'sales', 
-                'purchases', 
+                'rental',
+                'pos',
+                'sales',
+                'purchases',
                 'spare_parts',
                 'spares',
                 'motorcycle',

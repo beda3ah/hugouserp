@@ -10,7 +10,7 @@ return new class extends Migration
 {
     /**
      * Add missing fields to sales and purchases tables.
-     * 
+     *
      * BUG FIXES:
      * - Add amount_paid and amount_due columns that are referenced in models but don't exist
      * - Add payment_status for better tracking
@@ -28,7 +28,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('sales', 'amount_due')) {
                     $table->decimal('amount_due', 18, 4)->default(0)->after('amount_paid')->comment('Total amount due (alias for due_total)');
                 }
-                
+
                 // Payment tracking
                 if (!Schema::hasColumn('sales', 'payment_status')) {
                     $table->string('payment_status')->default('unpaid')->after('amount_due')->comment('Payment status: unpaid, partial, paid, overpaid');
@@ -36,7 +36,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('sales', 'payment_due_date')) {
                     $table->date('payment_due_date')->nullable()->after('payment_status')->comment('Payment due date');
                 }
-                
+
                 // Discount details
                 if (!Schema::hasColumn('sales', 'discount_type')) {
                     $table->string('discount_type')->default('fixed')->after('discount_total')->comment('Discount type: fixed, percentage');
@@ -44,7 +44,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('sales', 'discount_value')) {
                     $table->decimal('discount_value', 18, 4)->default(0)->after('discount_type')->comment('Discount value before calculation');
                 }
-                
+
                 // Shipping tracking
                 if (!Schema::hasColumn('sales', 'shipping_method')) {
                     $table->string('shipping_method')->nullable()->after('shipping_total')->comment('Shipping method/carrier');
@@ -58,7 +58,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('sales', 'actual_delivery_date')) {
                     $table->date('actual_delivery_date')->nullable()->after('expected_delivery_date')->comment('Actual delivery date');
                 }
-                
+
                 // Additional metadata
                 if (!Schema::hasColumn('sales', 'sales_person')) {
                     $table->string('sales_person')->nullable()->after('created_by')->comment('Sales person name or user ID');
@@ -66,7 +66,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('sales', 'internal_notes')) {
                     $table->text('internal_notes')->nullable()->after('notes')->comment('Internal notes not visible to customer');
                 }
-                
+
                 // Indexes
                 if (!$this->indexExists('sales', 'sales_payment_status_index')) {
                     $table->index('payment_status');
@@ -89,7 +89,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('purchases', 'amount_due')) {
                     $table->decimal('amount_due', 18, 4)->default(0)->after('amount_paid')->comment('Total amount due (alias for due_total)');
                 }
-                
+
                 // Payment tracking
                 if (!Schema::hasColumn('purchases', 'payment_status')) {
                     $table->string('payment_status')->default('unpaid')->after('amount_due')->comment('Payment status: unpaid, partial, paid');
@@ -97,7 +97,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('purchases', 'payment_due_date')) {
                     $table->date('payment_due_date')->nullable()->after('payment_status')->comment('Payment due date');
                 }
-                
+
                 // Discount details
                 if (!Schema::hasColumn('purchases', 'discount_type')) {
                     $table->string('discount_type')->default('fixed')->after('discount_total')->comment('Discount type: fixed, percentage');
@@ -105,7 +105,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('purchases', 'discount_value')) {
                     $table->decimal('discount_value', 18, 4)->default(0)->after('discount_type')->comment('Discount value before calculation');
                 }
-                
+
                 // Delivery tracking
                 if (!Schema::hasColumn('purchases', 'expected_delivery_date')) {
                     $table->date('expected_delivery_date')->nullable()->after('posted_at')->comment('Expected delivery date');
@@ -116,7 +116,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('purchases', 'delivery_status')) {
                     $table->string('delivery_status')->default('pending')->after('actual_delivery_date')->comment('Delivery status: pending, partial, completed');
                 }
-                
+
                 // Approval workflow
                 if (!Schema::hasColumn('purchases', 'approved_by')) {
                     $table->unsignedBigInteger('approved_by')->nullable()->after('delivery_status')->comment('User who approved the purchase');
@@ -124,7 +124,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('purchases', 'approved_at')) {
                     $table->timestamp('approved_at')->nullable()->after('approved_by')->comment('Purchase approval timestamp');
                 }
-                
+
                 // Additional metadata
                 if (!Schema::hasColumn('purchases', 'requisition_number')) {
                     $table->string('requisition_number')->nullable()->after('reference_no')->comment('Related requisition number');
@@ -132,7 +132,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('purchases', 'internal_notes')) {
                     $table->text('internal_notes')->nullable()->after('notes')->comment('Internal notes');
                 }
-                
+
                 // Indexes
                 if (!$this->indexExists('purchases', 'purchases_payment_status_index')) {
                     $table->index('payment_status');
@@ -146,7 +146,7 @@ return new class extends Migration
                 if (!$this->indexExists('purchases', 'purch_branch_payment_idx')) {
                     $table->index(['branch_id', 'payment_status'], 'purch_branch_payment_idx');
                 }
-                
+
                 // Foreign key
                 if (!$this->foreignKeyExists('purchases', 'purchases_approved_by_foreign')) {
                     $table->foreign('approved_by')->references('id')->on('users')->onDelete('set null');
@@ -164,7 +164,7 @@ return new class extends Migration
             $connection = Schema::getConnection();
             $schemaBuilder = $connection->getSchemaBuilder();
             $indexes = $schemaBuilder->getIndexes($table);
-            
+
             foreach ($indexes as $indexInfo) {
                 if ($indexInfo['name'] === $index) {
                     return true;
@@ -186,7 +186,7 @@ return new class extends Migration
             $connection = Schema::getConnection();
             $schemaBuilder = $connection->getSchemaBuilder();
             $foreignKeys = $schemaBuilder->getForeignKeys($table);
-            
+
             foreach ($foreignKeys as $fk) {
                 if ($fk['name'] === $foreignKey) {
                     return true;

@@ -10,7 +10,7 @@ return new class extends Migration
 {
     /**
      * Add advanced inventory management fields to products table.
-     * 
+     *
      * ENHANCEMENTS:
      * - Add stock quantity tracking (currently missing)
      * - Add stock alert threshold
@@ -35,7 +35,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('products', 'available_quantity')) {
                     $table->decimal('available_quantity', 18, 4)->storedAs('stock_quantity - reserved_quantity')->after('reserved_quantity')->comment('Available quantity for sale');
                 }
-                
+
                 // Warranty tracking
                 if (!Schema::hasColumn('products', 'has_warranty')) {
                     $table->boolean('has_warranty')->default(false)->after('track_stock_alerts')->comment('Product has warranty');
@@ -46,7 +46,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('products', 'warranty_type')) {
                     $table->string('warranty_type')->nullable()->after('warranty_period_days')->comment('Warranty type: manufacturer, extended, etc.');
                 }
-                
+
                 // Physical dimensions for shipping
                 if (!Schema::hasColumn('products', 'length')) {
                     $table->decimal('length', 10, 2)->nullable()->after('warranty_type')->comment('Length in cm');
@@ -63,7 +63,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('products', 'volumetric_weight')) {
                     $table->decimal('volumetric_weight', 10, 2)->storedAs('(length * width * height) / 5000')->after('weight')->comment('Volumetric weight for shipping');
                 }
-                
+
                 // Manufacturer and brand
                 if (!Schema::hasColumn('products', 'manufacturer')) {
                     $table->string('manufacturer')->nullable()->after('volumetric_weight')->comment('Manufacturer name');
@@ -77,7 +77,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('products', 'origin_country')) {
                     $table->string('origin_country')->nullable()->after('model_number')->comment('Country of origin');
                 }
-                
+
                 // Product lifecycle
                 if (!Schema::hasColumn('products', 'manufacture_date')) {
                     $table->date('manufacture_date')->nullable()->after('origin_country')->comment('Manufacture date');
@@ -91,7 +91,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('products', 'shelf_life_days')) {
                     $table->integer('shelf_life_days')->nullable()->after('is_perishable')->comment('Shelf life in days');
                 }
-                
+
                 // Sales and purchase preferences
                 if (!Schema::hasColumn('products', 'allow_backorder')) {
                     $table->boolean('allow_backorder')->default(false)->after('shelf_life_days')->comment('Allow orders when out of stock');
@@ -105,7 +105,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('products', 'maximum_order_quantity')) {
                     $table->decimal('maximum_order_quantity', 18, 4)->nullable()->after('minimum_order_quantity')->comment('Maximum quantity for orders');
                 }
-                
+
                 // Pricing
                 if (!Schema::hasColumn('products', 'msrp')) {
                     $table->decimal('msrp', 18, 4)->nullable()->after('maximum_order_quantity')->comment('Manufacturer suggested retail price');
@@ -119,7 +119,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('products', 'last_price_update')) {
                     $table->date('last_price_update')->nullable()->after('last_cost_update')->comment('Last price update date');
                 }
-                
+
                 // Indexes for performance
                 if (!$this->indexExists('products', 'products_stock_quantity_index')) {
                     $table->index('stock_quantity');
@@ -150,7 +150,7 @@ return new class extends Migration
             $connection = Schema::getConnection();
             $schemaBuilder = $connection->getSchemaBuilder();
             $indexes = $schemaBuilder->getIndexes($table);
-            
+
             foreach ($indexes as $indexInfo) {
                 if ($indexInfo['name'] === $index) {
                     return true;

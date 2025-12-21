@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Schema;
  * Fix Tickets Tables Creation Order
  *
  * This migration ensures ticket-related tables are created in the correct order
- * to avoid foreign key constraint errors. The original migration 
- * (2025_12_07_231200_create_tickets_tables.php) tried to create ticket_categories 
+ * to avoid foreign key constraint errors. The original migration
+ * (2025_12_07_231200_create_tickets_tables.php) tried to create ticket_categories
  * with a FK to ticket_sla_policies before that table existed.
  *
  * Correct order:
@@ -27,11 +27,11 @@ return new class extends Migration
     {
         // This migration ensures ticket-related tables exist in the correct order
         // and fixes any FK issues. It's safe to run multiple times.
-        
+
         // The tables should already exist from the original migration
         // (2025_12_07_231200_create_tickets_tables.php) which has been fixed.
         // This migration just ensures all necessary indexes exist.
-        
+
         if (Schema::hasTable('tickets')) {
             try {
                 Schema::table('tickets', function (Blueprint $table) {
@@ -39,11 +39,11 @@ return new class extends Migration
                     if (!$this->indexExists('tickets', 'tickets_branch_id_status_index')) {
                         $table->index(['branch_id', 'status'], 'tickets_branch_id_status_index');
                     }
-                    
+
                     if (!$this->indexExists('tickets', 'tickets_priority_id_index')) {
                         $table->index('priority_id', 'tickets_priority_id_index');
                     }
-                    
+
                     if (!$this->indexExists('tickets', 'tickets_category_id_index')) {
                         $table->index('category_id', 'tickets_category_id_index');
                     }

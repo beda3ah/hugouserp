@@ -13,7 +13,7 @@ return new class extends Migration
     {
         // Add soft deletes to critical tables for data recovery
         $criticalTables = ['sales', 'purchases', 'customers', 'suppliers', 'products', 'rental_contracts'];
-        
+
         foreach ($criticalTables as $table) {
             if (Schema::hasTable($table) && !Schema::hasColumn($table, 'deleted_at')) {
                 Schema::table($table, function (Blueprint $table) {
@@ -78,13 +78,13 @@ return new class extends Migration
             $schemaBuilder = Schema::getConnection()->getSchemaBuilder();
             $indexes = $schemaBuilder->getIndexes('sales');
             $indexNames = array_column($indexes, 'name');
-            
+
             if (!in_array('idx_sales_status_payment', $indexNames)) {
                 Schema::table('sales', function (Blueprint $table) {
                     $table->index(['status', 'payment_status'], 'idx_sales_status_payment');
                 });
             }
-            
+
             if (!in_array('idx_sales_customer_date', $indexNames)) {
                 Schema::table('sales', function (Blueprint $table) {
                     $table->index(['customer_id', 'posted_at'], 'idx_sales_customer_date');
@@ -96,13 +96,13 @@ return new class extends Migration
             $schemaBuilder = Schema::getConnection()->getSchemaBuilder();
             $indexes = $schemaBuilder->getIndexes('purchases');
             $indexNames = array_column($indexes, 'name');
-            
+
             if (!in_array('idx_purchases_status_payment', $indexNames)) {
                 Schema::table('purchases', function (Blueprint $table) {
                     $table->index(['status', 'payment_status'], 'idx_purchases_status_payment');
                 });
             }
-            
+
             if (!in_array('idx_purchases_supplier_date', $indexNames)) {
                 Schema::table('purchases', function (Blueprint $table) {
                     $table->index(['supplier_id', 'posted_at'], 'idx_purchases_supplier_date');
@@ -114,7 +114,7 @@ return new class extends Migration
             $schemaBuilder = Schema::getConnection()->getSchemaBuilder();
             $indexes = $schemaBuilder->getIndexes('products');
             $indexNames = array_column($indexes, 'name');
-            
+
             if (!in_array('idx_products_stock_alert', $indexNames)) {
                 Schema::table('products', function (Blueprint $table) {
                     $table->index(['stock_quantity', 'min_stock'], 'idx_products_stock_alert');
@@ -133,7 +133,7 @@ return new class extends Migration
             $schemaBuilder = Schema::getConnection()->getSchemaBuilder();
             $indexes = $schemaBuilder->getIndexes('sales');
             $indexNames = array_column($indexes, 'name');
-            
+
             Schema::table('sales', function (Blueprint $table) use ($indexNames) {
                 if (in_array('idx_sales_status_payment', $indexNames)) {
                     $table->dropIndex('idx_sales_status_payment');
@@ -148,7 +148,7 @@ return new class extends Migration
             $schemaBuilder = Schema::getConnection()->getSchemaBuilder();
             $indexes = $schemaBuilder->getIndexes('purchases');
             $indexNames = array_column($indexes, 'name');
-            
+
             Schema::table('purchases', function (Blueprint $table) use ($indexNames) {
                 if (in_array('idx_purchases_status_payment', $indexNames)) {
                     $table->dropIndex('idx_purchases_status_payment');
@@ -163,7 +163,7 @@ return new class extends Migration
             $schemaBuilder = Schema::getConnection()->getSchemaBuilder();
             $indexes = $schemaBuilder->getIndexes('products');
             $indexNames = array_column($indexes, 'name');
-            
+
             Schema::table('products', function (Blueprint $table) use ($indexNames) {
                 if (in_array('idx_products_stock_alert', $indexNames)) {
                     $table->dropIndex('idx_products_stock_alert');
@@ -198,7 +198,7 @@ return new class extends Migration
 
         // Remove soft deletes
         $criticalTables = ['sales', 'purchases', 'customers', 'suppliers', 'products', 'rental_contracts'];
-        
+
         foreach ($criticalTables as $table) {
             if (Schema::hasTable($table) && Schema::hasColumn($table, 'deleted_at')) {
                 Schema::table($table, function (Blueprint $table) {

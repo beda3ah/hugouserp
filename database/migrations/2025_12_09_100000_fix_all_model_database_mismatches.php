@@ -9,7 +9,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * This migration fixes all mismatches between Models and Database Schema
      * to achieve 100% compatibility.
      */
