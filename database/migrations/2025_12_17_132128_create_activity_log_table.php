@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
 
 class CreateActivityLogTable extends Migration
 {
-    public function up()
+    public function up(): void
     {
         Schema::connection(config('activitylog.database_connection'))->create(config('activitylog.table_name'), function (Blueprint $table) {
             $table->bigIncrements('id');
@@ -20,7 +22,7 @@ class CreateActivityLogTable extends Migration
         });
     }
 
-    public function down()
+    public function down(): void
     {
         Schema::connection(config('activitylog.database_connection'))->dropIfExists(config('activitylog.table_name'));
     }
