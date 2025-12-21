@@ -27,7 +27,7 @@ return new class extends Migration
             $table->text('notes')->nullable()->comment('Additional notes');
             $table->json('meta')->nullable()->comment('Additional metadata');
             $table->timestamps();
-            
+
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
             $table->foreign('warehouse_id')->references('id')->on('warehouses')->onDelete('set null');
             $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
@@ -35,7 +35,7 @@ return new class extends Migration
             $table->foreign('customer_id')->references('id')->on('customers')->onDelete('set null');
             $table->foreign('sale_id')->references('id')->on('sales')->onDelete('set null');
             $table->foreign('purchase_id')->references('id')->on('purchases')->onDelete('set null');
-            
+
             $table->index(['product_id', 'status']);
             $table->index(['branch_id', 'warehouse_id']);
             $table->index('warranty_end');

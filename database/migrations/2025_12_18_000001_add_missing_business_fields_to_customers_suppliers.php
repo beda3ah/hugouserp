@@ -10,7 +10,7 @@ return new class extends Migration
 {
     /**
      * Add missing business-critical fields to customers and suppliers tables.
-     * 
+     *
      * BUG FIXES:
      * - Add balance tracking for customers and suppliers
      * - Add credit limit management for customers
@@ -35,7 +35,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('customers', 'discount_percentage')) {
                     $table->decimal('discount_percentage', 8, 4)->default(0)->after('total_purchases')->comment('Default discount percentage');
                 }
-                
+
                 // Payment terms
                 if (!Schema::hasColumn('customers', 'payment_terms')) {
                     $table->string('payment_terms')->default('immediate')->after('discount_percentage')->comment('Payment terms: immediate, net15, net30, net60, net90');
@@ -43,12 +43,12 @@ return new class extends Migration
                 if (!Schema::hasColumn('customers', 'payment_due_days')) {
                     $table->integer('payment_due_days')->default(0)->after('payment_terms')->comment('Number of days for payment due');
                 }
-                
+
                 // Currency preference
                 if (!Schema::hasColumn('customers', 'preferred_currency')) {
                     $table->string('preferred_currency', 3)->default('EGP')->after('payment_due_days')->comment('Preferred currency code');
                 }
-                
+
                 // Additional contact info
                 if (!Schema::hasColumn('customers', 'website')) {
                     $table->string('website')->nullable()->after('preferred_currency')->comment('Customer website');
@@ -56,7 +56,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('customers', 'fax')) {
                     $table->string('fax')->nullable()->after('website')->comment('Fax number');
                 }
-                
+
                 // Credit status
                 if (!Schema::hasColumn('customers', 'credit_hold')) {
                     $table->boolean('credit_hold')->default(false)->after('fax')->comment('Is customer on credit hold');
@@ -64,7 +64,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('customers', 'credit_hold_reason')) {
                     $table->text('credit_hold_reason')->nullable()->after('credit_hold')->comment('Reason for credit hold');
                 }
-                
+
                 // Indexes for performance
                 if (!$this->indexExists('customers', 'customers_balance_index')) {
                     $table->index('balance');
@@ -90,7 +90,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('suppliers', 'average_lead_time_days')) {
                     $table->decimal('average_lead_time_days', 8, 2)->default(0)->after('total_purchases')->comment('Average delivery lead time in days');
                 }
-                
+
                 // Payment terms
                 if (!Schema::hasColumn('suppliers', 'payment_terms')) {
                     $table->string('payment_terms')->default('immediate')->after('average_lead_time_days')->comment('Payment terms: immediate, net15, net30, net60, net90');
@@ -98,12 +98,12 @@ return new class extends Migration
                 if (!Schema::hasColumn('suppliers', 'payment_due_days')) {
                     $table->integer('payment_due_days')->default(0)->after('payment_terms')->comment('Number of days for payment due');
                 }
-                
+
                 // Currency preference
                 if (!Schema::hasColumn('suppliers', 'preferred_currency')) {
                     $table->string('preferred_currency', 3)->default('EGP')->after('payment_due_days')->comment('Preferred currency code');
                 }
-                
+
                 // Performance metrics
                 if (!Schema::hasColumn('suppliers', 'quality_rating')) {
                     $table->decimal('quality_rating', 3, 2)->default(0)->after('preferred_currency')->comment('Quality rating 0-5');
@@ -117,7 +117,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('suppliers', 'total_orders')) {
                     $table->integer('total_orders')->default(0)->after('service_rating')->comment('Total number of orders placed');
                 }
-                
+
                 // Contact info
                 if (!Schema::hasColumn('suppliers', 'website')) {
                     $table->string('website')->nullable()->after('total_orders')->comment('Supplier website');
@@ -134,7 +134,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('suppliers', 'contact_person_email')) {
                     $table->string('contact_person_email')->nullable()->after('contact_person_phone')->comment('Primary contact email');
                 }
-                
+
                 // Status
                 if (!Schema::hasColumn('suppliers', 'is_approved')) {
                     $table->boolean('is_approved')->default(true)->after('contact_person_email')->comment('Is supplier approved for purchases');
@@ -142,7 +142,7 @@ return new class extends Migration
                 if (!Schema::hasColumn('suppliers', 'notes')) {
                     $table->text('notes')->nullable()->after('is_approved')->comment('Additional notes about supplier');
                 }
-                
+
                 // Indexes for performance
                 if (!$this->indexExists('suppliers', 'suppliers_balance_index')) {
                     $table->index('balance');
@@ -167,7 +167,7 @@ return new class extends Migration
             $connection = Schema::getConnection();
             $schemaBuilder = $connection->getSchemaBuilder();
             $indexes = $schemaBuilder->getIndexes($table);
-            
+
             foreach ($indexes as $indexInfo) {
                 if ($indexInfo['name'] === $index) {
                     return true;

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Fix remaining column mismatches between models and database schema.
- * 
+ *
  * This migration addresses missing columns in ticket_replies and other tables
  * that are referenced in model $fillable/$casts but not present in the database.
  */

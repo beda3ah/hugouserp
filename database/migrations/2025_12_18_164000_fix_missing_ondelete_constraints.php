@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -10,7 +12,7 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
+     *
      * This migration fixes foreign keys that are missing onDelete behavior.
      * Without explicit onDelete, Laravel defaults to RESTRICT which prevents
      * parent record deletion if children exist. This can cause operational issues.
@@ -18,12 +20,12 @@ return new class extends Migration
     public function up(): void
     {
         $driver = DB::connection()->getDriverName();
-        
+
         if ($driver === 'mysql') {
             // Fix: journal_entries.branch_id - should cascade when branch is deleted
             if (Schema::hasTable('journal_entries') && Schema::hasColumn('journal_entries', 'branch_id')) {
                 $this->dropForeignKeyIfExists('journal_entries', 'journal_entries_branch_id_foreign');
-                
+
                 Schema::table('journal_entries', function (Blueprint $table) {
                     $table->foreign('branch_id')
                         ->references('id')
@@ -31,19 +33,19 @@ return new class extends Migration
                         ->onDelete('cascade');
                 });
             }
-            
+
             // Fix: journal_entry_lines.account_id - should prevent deletion if account has lines (RESTRICT is correct)
             // No change needed - RESTRICT is appropriate for accounting data integrity
-            
+
             // Fix: production_orders.bom_id - should restrict deletion of BOM if orders exist
             // No change needed - RESTRICT is appropriate
-            
+
             // Fix: production_orders.product_id - should restrict deletion of product if orders exist
             // No change needed - RESTRICT is appropriate
-            
+
             // Fix: production_orders.warehouse_id - should restrict deletion of warehouse if orders exist
             // No change needed - RESTRICT is appropriate
-            
+
             // Fix: production_order_items.product_id - should restrict deletion of product if in use
             // No change needed - RESTRICT is appropriate
         }
@@ -59,7 +61,7 @@ return new class extends Migration
             $connection = Schema::getConnection();
             $schemaBuilder = $connection->getSchemaBuilder();
             $foreignKeys = $schemaBuilder->getForeignKeys($table);
-            
+
             foreach ($foreignKeys as $fk) {
                 if ($fk['name'] === $foreignKey) {
                     Schema::table($table, function (Blueprint $blueprint) use ($foreignKey) {

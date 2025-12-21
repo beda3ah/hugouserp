@@ -45,13 +45,13 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
             $table->foreign('supplier_id')->references('id')->on('suppliers')->onDelete('set null');
             $table->foreign('assigned_to')->references('id')->on('users')->onDelete('set null');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
-            
+
             $table->index(['branch_id', 'status']);
             $table->index('category');
             $table->index('purchase_date');
@@ -72,12 +72,12 @@ return new class extends Migration
             $table->text('notes')->nullable()->comment('Notes');
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
-            
+
             $table->foreign('asset_id')->references('id')->on('fixed_assets')->onDelete('cascade');
             $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
             $table->foreign('journal_entry_id')->references('id')->on('journal_entries')->onDelete('set null');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
-            
+
             $table->index(['asset_id', 'depreciation_date']);
             $table->index(['branch_id', 'period']);
             $table->unique(['asset_id', 'period'], 'asset_period_unique');
@@ -97,11 +97,11 @@ return new class extends Migration
             $table->text('notes')->nullable()->comment('Additional notes');
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
-            
+
             $table->foreign('asset_id')->references('id')->on('fixed_assets')->onDelete('cascade');
             $table->foreign('vendor_id')->references('id')->on('suppliers')->onDelete('set null');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
-            
+
             $table->index(['asset_id', 'maintenance_date']);
         });
     }

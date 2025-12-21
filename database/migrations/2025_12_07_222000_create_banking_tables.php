@@ -32,11 +32,11 @@ return new class extends Migration
             $table->unsignedBigInteger('updated_by')->nullable();
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('updated_by')->references('id')->on('users')->onDelete('set null');
-            
+
             $table->index(['branch_id', 'status']);
             $table->index('currency');
         });
@@ -63,12 +63,12 @@ return new class extends Migration
             $table->json('meta')->nullable()->comment('Additional metadata');
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
-            
+
             $table->foreign('bank_account_id')->references('id')->on('bank_accounts')->onDelete('cascade');
             $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
             $table->foreign('journal_entry_id')->references('id')->on('journal_entries')->onDelete('set null');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
-            
+
             $table->index(['bank_account_id', 'transaction_date']);
             $table->index(['branch_id', 'status']);
             $table->index('transaction_date');
@@ -92,12 +92,12 @@ return new class extends Migration
             $table->unsignedBigInteger('reconciled_by')->nullable()->comment('User who reconciled');
             $table->unsignedBigInteger('approved_by')->nullable()->comment('User who approved');
             $table->timestamps();
-            
+
             $table->foreign('bank_account_id')->references('id')->on('bank_accounts')->onDelete('cascade');
             $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
             $table->foreign('reconciled_by')->references('id')->on('users')->onDelete('set null');
             $table->foreign('approved_by')->references('id')->on('users')->onDelete('set null');
-            
+
             $table->index(['bank_account_id', 'statement_date']);
             $table->index(['branch_id', 'status']);
         });
@@ -119,10 +119,10 @@ return new class extends Migration
             $table->text('notes')->nullable()->comment('Notes');
             $table->unsignedBigInteger('created_by')->nullable();
             $table->timestamps();
-            
+
             $table->foreign('branch_id')->references('id')->on('branches')->onDelete('cascade');
             $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
-            
+
             $table->index(['branch_id', 'projection_date']);
             $table->index('period_type');
         });

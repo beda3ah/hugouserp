@@ -8,10 +8,10 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Fix final column mismatches between models and database schema.
- * 
+ *
  * This migration addresses missing columns in:
  * - customers: address, city, country, company, external_id
- * 
+ *
  * The Customer model expects these columns in the fillable array, but they
  * were not present in the original migration. The customers table only has
  * billing_address and shipping_address, but the model expects a generic

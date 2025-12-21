@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,7 +14,7 @@ return new class extends Migration
     public function up(): void
     {
         // Add indexes for frequently queried columns
-        
+
         // Sales table indexes
         if (Schema::hasTable('sales')) {
             Schema::table('sales', function (Blueprint $table) {
@@ -361,17 +363,17 @@ return new class extends Migration
         try {
             $connection = Schema::getConnection();
             $schemaBuilder = $connection->getSchemaBuilder();
-            
+
             // Get all indexes for the table
             $indexes = $schemaBuilder->getIndexes($table);
-            
+
             // Check if index exists by name
             foreach ($indexes as $indexInfo) {
                 if ($indexInfo['name'] === $index) {
                     return true;
                 }
             }
-            
+
             return false;
         } catch (\Exception $e) {
             // If we can't determine, assume it doesn't exist to allow creation attempt

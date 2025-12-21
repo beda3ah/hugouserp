@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Add category_id and unit_id columns to products table
- * 
+ *
  * These columns are used by the Product model but were missing from the original migration.
  * This ensures the schema matches the model's expectations.
  */
@@ -23,7 +23,7 @@ return new class extends Migration
             // Add category_id if it doesn't exist
             if (!Schema::hasColumn('products', 'category_id')) {
                 $table->unsignedBigInteger('category_id')->nullable()->after('module_id');
-                
+
                 // Add foreign key constraint to product_categories
                 if (Schema::hasTable('product_categories')) {
                     $table->foreign('category_id')
@@ -31,15 +31,15 @@ return new class extends Migration
                         ->on('product_categories')
                         ->onDelete('set null');
                 }
-                
+
                 // Add index for performance
                 $table->index('category_id');
             }
-            
+
             // Add unit_id if it doesn't exist
             if (!Schema::hasColumn('products', 'unit_id')) {
                 $table->unsignedBigInteger('unit_id')->nullable()->after('uom_factor');
-                
+
                 // Add foreign key constraint to units_of_measure
                 if (Schema::hasTable('units_of_measure')) {
                     $table->foreign('unit_id')
@@ -47,7 +47,7 @@ return new class extends Migration
                         ->on('units_of_measure')
                         ->onDelete('set null');
                 }
-                
+
                 // Add index for performance
                 $table->index('unit_id');
             }
@@ -66,7 +66,7 @@ return new class extends Migration
                 $table->dropIndex(['category_id']);
                 $table->dropColumn('category_id');
             }
-            
+
             if (Schema::hasColumn('products', 'unit_id')) {
                 $table->dropForeign(['unit_id']);
                 $table->dropIndex(['unit_id']);

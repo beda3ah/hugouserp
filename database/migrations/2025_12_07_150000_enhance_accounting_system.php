@@ -238,7 +238,7 @@ return new class extends Migration
             $connection = Schema::getConnection();
             $schemaBuilder = $connection->getSchemaBuilder();
             $indexes = $schemaBuilder->getIndexes($table);
-            
+
             foreach ($indexes as $indexInfo) {
                 if ($indexInfo['name'] === $index) {
                     return true;
