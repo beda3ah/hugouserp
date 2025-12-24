@@ -974,6 +974,17 @@ Route::get('/app/media/{media}/download', \App\Http\Controllers\Admin\MediaDownl
             ->middleware('can:modules.manage')
             ->whereNumber('module');
 
+        Route::get('/modules/{module}/fields/create', \App\Livewire\Admin\Modules\Fields\Form::class)
+            ->name('modules.fields.create')
+            ->middleware('can:modules.manage')
+            ->whereNumber('module');
+
+        Route::get('/modules/{module}/fields/{field}/edit', \App\Livewire\Admin\Modules\Fields\Form::class)
+            ->name('modules.fields.edit')
+            ->middleware('can:modules.manage')
+            ->whereNumber('module')
+            ->whereNumber('field');
+
         Route::get('/modules/{module}/rental-periods', \App\Livewire\Admin\Modules\RentalPeriods::class)
             ->name('modules.rental-periods')
             ->middleware('can:modules.manage')
