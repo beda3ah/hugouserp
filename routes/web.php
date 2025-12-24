@@ -410,6 +410,14 @@ Route::middleware('auth')->group(function () {
             ->name('locations.index')
             ->middleware('can:warehouse.view');
 
+        Route::get('/locations/create', \App\Livewire\Warehouse\Locations\Form::class)
+            ->name('locations.create')
+            ->middleware('can:warehouse.manage');
+
+        Route::get('/locations/{warehouse}/edit', \App\Livewire\Warehouse\Locations\Form::class)
+            ->name('locations.edit')
+            ->middleware('can:warehouse.manage');
+
         Route::get('/movements', \App\Livewire\Warehouse\Movements\Index::class)
             ->name('movements.index')
             ->middleware('can:warehouse.view');
@@ -951,6 +959,14 @@ Route::get('/app/media/{media}/download', \App\Http\Controllers\Admin\MediaDownl
         Route::get('/stores', \App\Livewire\Admin\Store\Stores::class)
             ->name('stores.index')
             ->middleware('can:stores.view');
+
+        Route::get('/stores/create', \App\Livewire\Admin\Store\Form::class)
+            ->name('stores.create')
+            ->middleware('can:stores.manage');
+
+        Route::get('/stores/{store}/edit', \App\Livewire\Admin\Store\Form::class)
+            ->name('stores.edit')
+            ->middleware('can:stores.manage');
 
         Route::get('/stores/orders', \App\Livewire\Admin\Store\OrdersDashboard::class)
             ->name('stores.orders')
