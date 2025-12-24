@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between gap-2">
         <div>
             <h1 class="text-lg font-semibold text-slate-800 dark:text-slate-100">
-                {{ $warehouseId ? __('Edit Warehouse') : __('Add Warehouse') }}
+                {{ $warehouseId ? __('Edit Location') : __('Add Location') }}
             </h1>
             <p class="text-sm text-slate-500 dark:text-slate-400">
                 {{ __('Configure warehouse location settings.') }}
