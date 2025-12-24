@@ -122,6 +122,8 @@ class Form extends Component
         $hour = (int) $time[0];
         $minute = (int) ($time[1] ?? 0);
 
+        $days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
         switch ($this->frequency) {
             case 'daily':
                 $next = $now->copy()->setTime($hour, $minute);
@@ -130,7 +132,8 @@ class Form extends Component
                 }
                 break;
             case 'weekly':
-                $next = $now->copy()->next((int) $this->dayOfWeek)->setTime($hour, $minute);
+                $dayName = $days[(int) $this->dayOfWeek] ?? 'monday';
+                $next = $now->copy()->next($dayName)->setTime($hour, $minute);
                 break;
             case 'monthly':
                 $next = $now->copy()->day((int) $this->dayOfMonth)->setTime($hour, $minute);

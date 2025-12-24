@@ -4,111 +4,49 @@ declare(strict_types=1);
 
 namespace App\Traits;
 
+/**
+ * @deprecated This trait is deprecated. Use page-based forms instead of modals.
+ * For backward compatibility, the trait remains but is not recommended for new development.
+ */
 trait HasDualModeCrud
 {
-    public bool $isModal = false;
-    public bool $showModal = false;
-    public ?int $editingId = null;
-
     /**
-     * Initialize dual mode CRUD
-     * Call this from mount() method
-     */
-    public function initializeDualMode(): void
-    {
-        // Check if we're in modal mode from URL parameter
-        $this->isModal = request()->has('modal') || request()->input('mode') === 'modal';
-        
-        // If editing and ID is provided, load the record
-        if ($editingId = request()->input('id') ?? request()->input('edit')) {
-            $this->editingId = (int) $editingId;
-            if (method_exists($this, 'loadRecord')) {
-                $this->loadRecord($this->editingId);
-            }
-        }
-    }
-
-    /**
-     * Open modal for creating new record
-     */
-    public function openCreateModal(): void
-    {
-        $this->reset();
-        $this->editingId = null;
-        $this->showModal = true;
-        
-        if (method_exists($this, 'resetForm')) {
-            $this->resetForm();
-        }
-    }
-
-    /**
-     * Open modal for editing existing record
-     */
-    public function openEditModal(int $id): void
-    {
-        $this->editingId = $id;
-        $this->showModal = true;
-        
-        if (method_exists($this, 'loadRecord')) {
-            $this->loadRecord($id);
-        }
-    }
-
-    /**
-     * Close modal
-     */
-    public function closeModal(): void
-    {
-        $this->showModal = false;
-        $this->editingId = null;
-        $this->reset();
-        
-        if (method_exists($this, 'resetForm')) {
-            $this->resetForm();
-        }
-    }
-
-    /**
-     * Navigate to dedicated create page
+     * @deprecated Use page-based navigation instead
      */
     public function goToCreatePage()
     {
         $currentRoute = request()->route()->getName();
         $createRoute = str_replace('.index', '.create', $currentRoute);
-        
+
         if (\Route::has($createRoute)) {
             return redirect()->route($createRoute);
         }
-        
-        // Fallback to current page if route doesn't exist
+
         return redirect()->back()->with('error', __('Create page not available'));
     }
 
     /**
-     * Navigate to dedicated edit page
+     * @deprecated Use page-based navigation instead
      */
     public function goToEditPage(int $id)
     {
         $currentRoute = request()->route()->getName();
         $editRoute = str_replace('.index', '.edit', $currentRoute);
-        
+
         if (\Route::has($editRoute)) {
             return redirect()->route($editRoute, ['id' => $id]);
         }
-        
-        // Fallback to current page if route doesn't exist
+
         return redirect()->back()->with('error', __('Edit page not available'));
     }
 
     /**
-     * Return to index/list page
+     * @deprecated Use page-based navigation instead
      */
     public function goToIndex()
     {
         $currentRoute = request()->route()->getName();
-        
-        // Try to find index route
+
         $patterns = ['.create', '.edit', '.form'];
         foreach ($patterns as $pattern) {
             if (str_contains($currentRoute, $pattern)) {
@@ -118,33 +56,8 @@ trait HasDualModeCrud
                 }
             }
         }
-        
-        // Fallback to previous page
-        return redirect()->back();
-    }
 
-    /**
-     * Handle save action based on mode
-     */
-    public function handleSave(): void
-    {
-        // Validate first
-        $this->validate();
-        
-        // Call the actual save method
-        if (method_exists($this, 'performSave')) {
-            $result = $this->performSave();
-        } else {
-            $result = $this->save();
-        }
-        
-        // Handle post-save based on mode
-        if ($this->isModal || $this->showModal) {
-            $this->closeModal();
-            $this->dispatch('refreshList');
-        } else {
-            $this->goToIndex();
-        }
+        return redirect()->back();
     }
 
     /**
@@ -152,7 +65,7 @@ trait HasDualModeCrud
      */
     public function isCreating(): bool
     {
-        return empty($this->editingId);
+        return empty($this->editingId ?? null);
     }
 
     /**
@@ -160,7 +73,7 @@ trait HasDualModeCrud
      */
     public function isEditing(): bool
     {
-        return !empty($this->editingId);
+        return ! empty($this->editingId ?? null);
     }
 
     /**
@@ -171,7 +84,7 @@ trait HasDualModeCrud
         if ($this->isCreating()) {
             return __('Create :entity', ['entity' => $entityName]);
         }
-        
+
         return __('Edit :entity', ['entity' => $entityName]);
     }
 
@@ -183,7 +96,7 @@ trait HasDualModeCrud
         if ($this->isCreating()) {
             return __('Create');
         }
-        
+
         return __('Update');
     }
 }

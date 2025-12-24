@@ -162,9 +162,14 @@ class Form extends Component
                         ]
                     );
                 });
+            } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+                $this->addError('store_id', __('This product is already mapped to this store'));
+
+                return;
             } catch (\Illuminate\Database\QueryException $e) {
-                if (str_contains($e->getMessage(), 'UNIQUE constraint failed') ||
-                    str_contains($e->getMessage(), 'Duplicate entry')) {
+                // Fallback for older Laravel or PDO drivers that don't throw UniqueConstraintViolationException
+                $errorCode = $e->errorInfo[1] ?? 0;
+                if ($errorCode === 1062 || $errorCode === 19 || $errorCode === 2627) {
                     $this->addError('store_id', __('This product is already mapped to this store'));
 
                     return;

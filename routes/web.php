@@ -413,6 +413,15 @@ Route::middleware('auth')->group(function () {
             ->name('serials.edit')
             ->middleware('can:inventory.manage');
 
+        // Services
+        Route::get('/services/create', \App\Livewire\Inventory\Services\Form::class)
+            ->name('services.create')
+            ->middleware('can:inventory.products.create');
+
+        Route::get('/services/{service}/edit', \App\Livewire\Inventory\Services\Form::class)
+            ->name('services.edit')
+            ->middleware('can:inventory.products.update');
+
         // Barcode printing
         Route::get('/barcodes', \App\Livewire\Inventory\BarcodePrint::class)
             ->name('barcodes')
