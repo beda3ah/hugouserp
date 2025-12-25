@@ -18,6 +18,10 @@ class TicketReply extends Model
         'message',
         'is_internal',
         'read_at',
+        'customer_email',
+        'customer_name',
+        'ip_address',
+        'metadata',
         'created_by',
         'updated_by',
     ];
@@ -25,6 +29,7 @@ class TicketReply extends Model
     protected $casts = [
         'is_internal' => 'boolean',
         'read_at' => 'datetime',
+        'metadata' => 'array',
     ];
 
     // Relationships

@@ -52,6 +52,7 @@ class SaleService implements SaleServiceInterface
 
                 return DB::transaction(function () use ($sale, $items, $reason) {
                     $note = ReturnNote::create([
+                        'branch_id' => $sale->branch_id,
                         'sale_id' => $sale->getKey(),
                         'reason' => $reason,
                     ]);
@@ -84,6 +85,10 @@ class SaleService implements SaleServiceInterface
                     $newPaidTotal = bcsub((string) $sale->paid_total, $refund, 2);
                     $sale->paid_total = max(0.0, (float) $newPaidTotal);
                     $sale->save();
+
+                    // Update the total on the return note
+                    $note->total = $refund;
+                    $note->save();
 
                     $this->logServiceInfo('handleReturn', 'Sale return processed', [
                         'sale_id' => $sale->getKey(),

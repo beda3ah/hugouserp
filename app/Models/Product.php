@@ -51,7 +51,7 @@ class Product extends BaseModel
         'uom', 'uom_factor', 'unit_id',
         'cost_method', 'cost_currency', 'standard_cost', 'cost',
         'tax_id',
-        'price_list_id', 'default_price', 'price_currency',
+        'price_list_id', 'default_price', 'price', 'price_currency',
         'min_stock', 'reorder_point', 'max_stock', 'reorder_qty', 'stock_quantity', 'stock_alert_threshold',
         'reserved_quantity', 'lead_time_days', 'location_code',
         'is_serialized', 'is_batch_tracked',

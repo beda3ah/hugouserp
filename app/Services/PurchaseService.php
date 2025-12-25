@@ -81,6 +81,7 @@ class PurchaseService implements PurchaseServiceInterface
                     
                     PurchaseItem::create([
                         'purchase_id' => $p->getKey(),
+                        'branch_id' => $branchId,
                         'product_id' => $it['product_id'],
                         'qty' => $qty,
                         'unit_cost' => $unitCost,
