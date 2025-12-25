@@ -48,7 +48,7 @@ class Index extends Component
      */
     protected function allowedSortColumns(): array
     {
-        return ['id', 'name', 'email', 'phone', 'balance', 'customer_type', 'created_at', 'updated_at'];
+        return ['id', 'name', 'email', 'phone', 'customer_tier', 'created_at', 'updated_at'];
     }
 
     public function mount(): void
@@ -121,7 +121,7 @@ class Index extends Component
                         ->orWhere('phone', 'like', "%{$this->search}%");
                 });
             })
-            ->when($this->customerType, fn ($q) => $q->where('customer_type', $this->customerType))
+            ->when($this->customerType, fn ($q) => $q->where('customer_tier', $this->customerType))
             ->orderBy($this->getSortField(), $this->getSortDirection());
 
         if ($this->paginationMode === 'load-more') {
@@ -153,9 +153,17 @@ class Index extends Component
                         ->orWhere('phone', 'like', "%{$this->search}%");
                 });
             })
-            ->when($this->customerType, fn ($q) => $q->where('customer_type', $this->customerType))
+            ->when($this->customerType, fn ($q) => $q->where('customer_tier', $this->customerType))
             ->orderBy($this->getSortField(), $this->getSortDirection())
-            ->select(['id', 'name', 'email', 'phone', 'address', 'balance', 'created_at'])
+            ->select([
+                'id',
+                'name',
+                'email',
+                'phone',
+                'billing_address',
+                'customer_tier',
+                'created_at',
+            ])
             ->get();
 
         return $this->performExport('customers', $data, __('Customers Export'));

@@ -31,7 +31,7 @@ class Index extends Component
      */
     protected function allowedSortColumns(): array
     {
-        return ['id', 'name', 'email', 'phone', 'balance', 'created_at', 'updated_at'];
+        return ['id', 'name', 'email', 'phone', 'created_at', 'updated_at'];
     }
 
     public function mount(): void
@@ -72,7 +72,7 @@ class Index extends Component
                 ->orWhere('email', 'like', "%{$this->search}%")
                 ->orWhere('phone', 'like', "%{$this->search}%"))
             ->orderBy($this->getSortField(), $this->getSortDirection())
-            ->select(['id', 'name', 'email', 'phone', 'address', 'balance', 'created_at'])
+            ->select(['id', 'name', 'email', 'phone', 'address', 'created_at'])
             ->get();
 
         return $this->performExport('suppliers', $data, __('Suppliers Export'));
