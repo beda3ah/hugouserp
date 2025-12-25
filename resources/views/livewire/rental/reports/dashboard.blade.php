@@ -118,17 +118,17 @@
 
     <div class="erp-card p-4 rounded-2xl">
         <h2 class="text-sm font-semibold text-slate-900 dark:text-slate-50 mb-3">
-            Contracts expiring soon
+            {{ __('Contracts expiring soon') }}
         </h2>
         <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead class="border-b border-slate-200/80 dark:border-slate-700/80 text-left text-xs uppercase text-slate-500 dark:text-slate-400">
                     <tr>
-                        <th class="py-2 pr-4">Property</th>
-                        <th class="py-2 pr-4">Unit</th>
-                        <th class="py-2 pr-4">Tenant</th>
-                        <th class="py-2 pr-4">End date</th>
-                        <th class="py-2 pr-4">Rent</th>
+                        <th class="py-2 pr-4">{{ __('Property') }}</th>
+                        <th class="py-2 pr-4">{{ __('Unit') }}</th>
+                        <th class="py-2 pr-4">{{ __('Tenant') }}</th>
+                        <th class="py-2 pr-4">{{ __('End date') }}</th>
+                        <th class="py-2 pr-4">{{ __('Rent') }}</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-200">
