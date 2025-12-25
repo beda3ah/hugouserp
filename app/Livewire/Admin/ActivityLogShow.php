@@ -88,9 +88,15 @@ class ActivityLogShow extends Component
 
     /**
      * Format values for display
+     * @param int $depth Current recursion depth to prevent stack overflow
      */
-    protected function formatValue($value): string
+    protected function formatValue($value, int $depth = 0): string
     {
+        // Prevent infinite recursion
+        if ($depth > 5) {
+            return is_scalar($value) ? (string)$value : '[nested data]';
+        }
+
         if (is_null($value)) {
             return __('(empty)');
         }
@@ -100,7 +106,14 @@ class ActivityLogShow extends Component
         }
 
         if (is_array($value)) {
-            return implode(', ', array_map(fn($v) => $this->formatValue($v), $value));
+            // Limit array processing to prevent performance issues
+            $items = array_slice($value, 0, 10);
+            $formatted = array_map(fn($v) => $this->formatValue($v, $depth + 1), $items);
+            $result = implode(', ', $formatted);
+            if (count($value) > 10) {
+                $result .= ' ... ' . __('and :count more', ['count' => count($value) - 10]);
+            }
+            return $result;
         }
 
         if (is_object($value)) {

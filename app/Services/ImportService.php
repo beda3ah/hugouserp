@@ -96,7 +96,8 @@ class ImportService
                     'description' => 'nullable|string|max:500',
                     'reference' => 'nullable|string|max:100',
                 ],
-                'unique_columns' => [],
+                // Reference used for duplicate detection; if empty, expense_date+amount+category combo checked
+                'unique_columns' => ['reference'],
             ],
             'incomes' => [
                 'name' => __('Incomes'),
@@ -109,7 +110,8 @@ class ImportService
                     'description' => 'nullable|string|max:500',
                     'reference' => 'nullable|string|max:100',
                 ],
-                'unique_columns' => [],
+                // Reference used for duplicate detection; if empty, income_date+amount+category combo checked
+                'unique_columns' => ['reference'],
             ],
             'categories' => [
                 'name' => __('Categories'),

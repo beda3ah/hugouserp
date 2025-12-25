@@ -66,41 +66,56 @@ class BulkImport extends Component
         }
     }
 
-    public function loadGoogleSheet(): void
+    /**
+     * Fetch CSV data from Google Sheets
+     * @return string|null The CSV content or null on failure
+     */
+    protected function fetchGoogleSheetCsv(): ?string
     {
         if (empty($this->googleSheetUrl)) {
             session()->flash('error', __('Please enter a Google Sheets URL'));
-            return;
+            return null;
         }
 
-        // Extract sheet ID from URL
         $sheetId = $this->extractGoogleSheetId($this->googleSheetUrl);
         if (!$sheetId) {
             session()->flash('error', __('Invalid Google Sheets URL. Please use a sharing link like: https://docs.google.com/spreadsheets/d/SHEET_ID/edit'));
-            return;
+            return null;
         }
 
         try {
-            // Use the CSV export URL
             $csvUrl = "https://docs.google.com/spreadsheets/d/{$sheetId}/export?format=csv";
-            
             $response = Http::timeout(30)->get($csvUrl);
             
             if (!$response->successful()) {
                 session()->flash('error', __('Could not access Google Sheet. Make sure the sheet is shared publicly or with "Anyone with the link".'));
-                return;
+                return null;
             }
 
+            return $response->body();
+        } catch (\Exception $e) {
+            session()->flash('error', __('Error loading Google Sheet: ') . $e->getMessage());
+            return null;
+        }
+    }
+
+    public function loadGoogleSheet(): void
+    {
+        $csvContent = $this->fetchGoogleSheetCsv();
+        if (!$csvContent) {
+            return;
+        }
+
+        try {
             // Save CSV content to temp file
             $tempPath = 'imports/temp_' . uniqid() . '.csv';
-            Storage::disk('local')->put($tempPath, $response->body());
+            Storage::disk('local')->put($tempPath, $csvContent);
             
             // Load preview from CSV
             $this->loadPreviewFromPath(Storage::disk('local')->path($tempPath));
             
             // Clean up
             Storage::disk('local')->delete($tempPath);
-            
         } catch (\Exception $e) {
             session()->flash('error', __('Error loading Google Sheet: ') . $e->getMessage());
         }
@@ -264,17 +279,15 @@ class BulkImport extends Component
                 $tempPath = $this->importFile->store('imports', 'local');
                 $fullPath = Storage::disk('local')->path($tempPath);
             } elseif ($this->importSource === 'google_sheet' && !empty($this->googleSheetUrl)) {
-                // Re-download from Google Sheets for import
-                $sheetId = $this->extractGoogleSheetId($this->googleSheetUrl);
-                $csvUrl = "https://docs.google.com/spreadsheets/d/{$sheetId}/export?format=csv";
-                $response = Http::timeout(30)->get($csvUrl);
-                
-                if (!$response->successful()) {
-                    throw new \Exception(__('Could not access Google Sheet'));
+                // Use the refactored method to fetch Google Sheet data
+                $csvContent = $this->fetchGoogleSheetCsv();
+                if (!$csvContent) {
+                    $this->importing = false;
+                    return;
                 }
                 
                 $tempPath = 'imports/temp_' . uniqid() . '.csv';
-                Storage::disk('local')->put($tempPath, $response->body());
+                Storage::disk('local')->put($tempPath, $csvContent);
                 $fullPath = Storage::disk('local')->path($tempPath);
             } else {
                 session()->flash('error', __('Please upload a file or provide a Google Sheet URL'));
