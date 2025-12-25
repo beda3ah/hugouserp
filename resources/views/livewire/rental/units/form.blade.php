@@ -14,9 +14,15 @@
     <form wire:submit.prevent="save" class="space-y-6">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div class="space-y-1">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                    {{ __('Property') }}
-                </label>
+                <div class="flex items-center justify-between">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                        {{ __('Property') }}
+                    </label>
+                    <x-quick-add-link 
+                        :route="route('app.rental.properties.create')" 
+                        label="{{ __('Add Property') }}"
+                        permission="rental.properties.create" />
+                </div>
                 <select wire:model.defer="form.property_id" class="erp-input">
                     @foreach($availableProperties as $option)
                         <option value="{{ $option['id'] }}">{{ $option['label'] }}</option>

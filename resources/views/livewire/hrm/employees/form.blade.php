@@ -54,9 +54,15 @@
             </div>
 
             <div class="space-y-1">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                    {{ __('Branch') }}
-                </label>
+                <div class="flex items-center justify-between">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                        {{ __('Branch') }}
+                    </label>
+                    <x-quick-add-link 
+                        :route="route('admin.branches.create')" 
+                        label="{{ __('Add Branch') }}"
+                        permission="branches.create" />
+                </div>
                 <select wire:model.defer="form.branch_id" class="erp-input">
                     @foreach(\App\Models\Branch::where('is_active', true)->orderBy('name')->get(['id', 'name']) as $branch)
                         <option value="{{ $branch->id }}">{{ $branch->name }}</option>
@@ -68,9 +74,15 @@
             </div>
 
             <div class="space-y-1">
-                <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
-                    {{ __('Linked user (optional)') }}
-                </label>
+                <div class="flex items-center justify-between">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                        {{ __('Linked user (optional)') }}
+                    </label>
+                    <x-quick-add-link 
+                        :route="route('admin.users.create')" 
+                        label="{{ __('Add User') }}"
+                        permission="users.manage" />
+                </div>
                 <select wire:model.defer="form.user_id" class="erp-input">
                     <option value="">{{ __('Not linked') }}</option>
                     @foreach($availableUsers as $option)

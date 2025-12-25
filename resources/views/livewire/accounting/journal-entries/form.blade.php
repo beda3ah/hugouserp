@@ -60,10 +60,16 @@
             <div class="border-t border-slate-200 pt-6">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold text-slate-800">{{ __('Journal Lines') }}</h3>
-                    <button type="button" wire:click="addLine" class="erp-btn erp-btn-secondary erp-btn-sm">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                        {{ __('Add Line') }}
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <x-quick-add-link 
+                            :route="route('app.accounting.accounts.create')" 
+                            label="{{ __('Add Account') }}"
+                            permission="accounting.create" />
+                        <button type="button" wire:click="addLine" class="erp-btn erp-btn-secondary erp-btn-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            {{ __('Add Line') }}
+                        </button>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
