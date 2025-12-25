@@ -232,9 +232,9 @@ class BranchIsolationTest extends TestCase
 
         $response->assertNotFound();
 
-        // Verify data wasn't modified
+        // Verify data wasn't modified - is_active should still be true (not archived)
         $this->tenantB->refresh();
-        $this->assertFalse($this->tenantB->is_archived ?? false);
+        $this->assertTrue($this->tenantB->is_active ?? true);
     }
 
     /** @test */

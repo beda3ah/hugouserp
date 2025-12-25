@@ -68,7 +68,9 @@ class Dashboard extends Component
             ->toArray();
 
         $occupied = $statusCounts['occupied'] ?? 0;
-        $vacant = $statusCounts['vacant'] ?? ($total - $occupied);
+        // Handle both 'vacant' and 'available' status names for compatibility
+        // TODO: Standardize on 'available' status once all references are updated
+        $vacant = $statusCounts['vacant'] ?? $statusCounts['available'] ?? ($total - $occupied);
 
         $occupancyRate = $total > 0 ? (float) bcdiv(bcmul((string) $occupied, '100', 4), (string) $total, 1) : 0;
 

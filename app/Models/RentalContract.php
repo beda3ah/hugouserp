@@ -18,6 +18,7 @@ class RentalContract extends BaseModel
         'start_date', 'end_date', 'rent', 'deposit', 'status', 
         'renewal_notice_days', 'auto_renew', 'renewal_term_months', 
         'deposit_refunded', 'deposit_refund_date',
+        'expiration_notified_at',
         'extra_attributes'
     ];
 
@@ -31,7 +32,8 @@ class RentalContract extends BaseModel
         'custom_days' => 'integer',
         'renewal_notice_days' => 'integer',
         'renewal_term_months' => 'integer',
-        'auto_renew' => 'boolean'
+        'auto_renew' => 'boolean',
+        'expiration_notified_at' => 'datetime',
     ];
 
     public function unit(): BelongsTo

@@ -19,7 +19,9 @@ class StockMovement extends BaseModel
         'reference_type', 'reference_id',
         'batch_no', 'serial_no', 'expires_at',
         'status', 'notes', 'extra_attributes', 'created_by', 'updated_by',
-        'quantity', 'type', // Legacy attribute support
+        // Legacy attribute support - these are mapped to qty and direction via mutators
+        // but must be in fillable for mass assignment to work properly
+        'quantity', 'type',
     ];
 
     protected $casts = [
