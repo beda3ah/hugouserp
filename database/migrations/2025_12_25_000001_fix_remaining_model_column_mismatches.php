@@ -20,7 +20,8 @@ return new class extends Migration
         if (Schema::hasTable('leave_requests')) {
             Schema::table('leave_requests', function (Blueprint $table): void {
                 if (!Schema::hasColumn('leave_requests', 'extra_attributes')) {
-                    $table->json('extra_attributes')->nullable()->after('approved_at');
+                    // Don't specify position to avoid dependency on other columns existing
+                    $table->json('extra_attributes')->nullable();
                 }
             });
         }

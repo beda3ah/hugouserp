@@ -51,12 +51,7 @@ class SaleService implements SaleServiceInterface
                 $sale = $this->findBranchSaleOrFail($saleId)->load('items');
 
                 return DB::transaction(function () use ($sale, $items, $reason) {
-                    $note = ReturnNote::create([
-                        'branch_id' => $sale->branch_id,
-                        'sale_id' => $sale->getKey(),
-                        'reason' => $reason,
-                    ]);
-
+                    // Calculate refund amount first
                     $refund = '0.00';
                     foreach ($items as $it) {
                         // Validate required fields
@@ -80,15 +75,19 @@ class SaleService implements SaleServiceInterface
                         $refund = bcadd($refund, $line, 2);
                     }
 
+                    // Create return note with total included
+                    $note = ReturnNote::create([
+                        'branch_id' => $sale->branch_id,
+                        'sale_id' => $sale->getKey(),
+                        'reason' => $reason,
+                        'total' => (float) $refund,
+                    ]);
+
                     $sale->status = 'returned';
                     // Use bcmath to prevent rounding errors in refund calculation
                     $newPaidTotal = bcsub((string) $sale->paid_total, $refund, 2);
                     $sale->paid_total = max(0.0, (float) $newPaidTotal);
                     $sale->save();
-
-                    // Update the total on the return note
-                    $note->total = $refund;
-                    $note->save();
 
                     $this->logServiceInfo('handleReturn', 'Sale return processed', [
                         'sale_id' => $sale->getKey(),
