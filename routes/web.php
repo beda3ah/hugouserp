@@ -429,8 +429,16 @@ Route::middleware('auth')->group(function () {
 
         // Vehicle Models (for spare parts compatibility)
         Route::get('/vehicle-models', \App\Livewire\Inventory\VehicleModels::class)
-            ->name('vehicle-models')
+            ->name('vehicle-models.index')
             ->middleware('can:inventory.view');
+        
+        Route::get('/vehicle-models/create', \App\Livewire\Inventory\VehicleModels\Form::class)
+            ->name('vehicle-models.create')
+            ->middleware('can:spares.compatibility.manage');
+        
+        Route::get('/vehicle-models/{vehicleModel}/edit', \App\Livewire\Inventory\VehicleModels\Form::class)
+            ->name('vehicle-models.edit')
+            ->middleware('can:spares.compatibility.manage');
     });
 
     // WAREHOUSE MODULE
