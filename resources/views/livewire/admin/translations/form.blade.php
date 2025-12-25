@@ -89,7 +89,7 @@
                         </label>
                         <textarea wire:model="valueAr" rows="4" dir="rtl"
                                   class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-right"
-                                  placeholder="{{ __('أدخل الترجمة العربية') }}"></textarea>
+                                  placeholder="{{ __('Enter Arabic translation') }}"></textarea>
                         @error('valueAr') <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> @enderror
                     </div>
                 </div>

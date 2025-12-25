@@ -159,13 +159,17 @@ class Form extends Component
             $translations = include $filePath;
         }
         
+        // Sanitize the value to prevent code injection
+        // Remove any PHP tags or code-like patterns
+        $sanitizedValue = $this->sanitizeTranslationValue($value);
+        
         // Handle nested keys
         $keys = explode('.', $key);
         $current = &$translations;
         
         foreach ($keys as $i => $k) {
             if ($i === count($keys) - 1) {
-                $current[$k] = $value;
+                $current[$k] = $sanitizedValue;
             } else {
                 if (!isset($current[$k]) || !is_array($current[$k])) {
                     $current[$k] = [];
@@ -175,6 +179,7 @@ class Form extends Component
         }
         
         // Save to file using var_export for safe PHP array generation
+        // var_export properly escapes strings and generates valid PHP syntax
         $content = "<?php\n\nreturn " . var_export($translations, true) . ";\n";
         
         // Ensure directory exists
@@ -184,6 +189,20 @@ class Form extends Component
         }
         
         File::put($filePath, $content);
+    }
+    
+    /**
+     * Sanitize translation value to prevent code injection
+     */
+    protected function sanitizeTranslationValue(string $value): string
+    {
+        // Remove PHP tags
+        $value = preg_replace('/<\?php|\?>|<\?=?/i', '', $value);
+        
+        // Remove potential function calls pattern
+        $value = preg_replace('/\b(eval|exec|system|shell_exec|passthru|proc_open|popen)\s*\(/i', '', $value);
+        
+        return $value;
     }
     
     public function cancel()

@@ -59,6 +59,18 @@ class Index extends Component
             $files = File::files($langPath);
             
             foreach ($files as $file) {
+                // Security: Only process .php files and ensure they are in the expected directory
+                if ($file->getExtension() !== 'php') {
+                    continue;
+                }
+                
+                // Verify the file is within the lang directory (prevent path traversal)
+                $realPath = realpath($file->getPathname());
+                $langBasePath = realpath(lang_path());
+                if (!$realPath || !$langBasePath || !str_starts_with($realPath, $langBasePath)) {
+                    continue;
+                }
+                
                 $group = pathinfo($file->getFilename(), PATHINFO_FILENAME);
                 
                 // Filter by selected group
@@ -112,14 +124,24 @@ class Index extends Component
     public function clearCache()
     {
         try {
-            // Clear translation-related caches
+            // Clear translation-related caches specifically
             Cache::forget('translations.en');
             Cache::forget('translations.ar');
             
-            // Clear all cached translations
-            Cache::flush();
+            // Clear Laravel's built-in translation cache
+            // This is safer than Cache::flush() as it only clears translation-specific cache
+            $translationCacheKeys = [
+                'laravel_translations_en',
+                'laravel_translations_ar',
+                'translations.en',
+                'translations.ar',
+            ];
             
-            // Clear config cache
+            foreach ($translationCacheKeys as $key) {
+                Cache::forget($key);
+            }
+            
+            // Clear opcache if available (helps refresh loaded translation files)
             if (function_exists('opcache_reset')) {
                 opcache_reset();
             }
