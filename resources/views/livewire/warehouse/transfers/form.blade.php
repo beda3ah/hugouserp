@@ -11,7 +11,13 @@
             <div class="space-y-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('From Warehouse') }} *</label>
+                        <div class="flex items-center justify-between">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">{{ __('From Warehouse') }} *</label>
+                            <x-quick-add-link 
+                                :route="route('app.warehouse.warehouses.create')" 
+                                label="{{ __('Add Warehouse') }}"
+                                permission="warehouse.manage" />
+                        </div>
                         <select wire:model="fromWarehouseId" class="erp-input" required>
                             <option value="">{{ __('Select source warehouse') }}</option>
                             @foreach($warehouses as $warehouse)
