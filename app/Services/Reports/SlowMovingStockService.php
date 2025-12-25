@@ -34,13 +34,13 @@ class SlowMovingStockService
 
         return [
             'slow_moving_products' => $products->map(function($product) {
-                $stockValue = bcmul((string)$product->stock_quantity, (string)$product->selling_price, 2);
+                $stockValue = bcmul((string)$product->stock_quantity, (string)($product->default_price ?? 0), 2);
                 $dailyRate = $this->calculateDailySalesRate($product);
                 
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
-                    'sku' => $product->product_code,
+                    'sku' => $product->sku ?? $product->code,
                     'stock_quantity' => $product->stock_quantity,
                     'stock_value' => (float)$stockValue,
                     'days_since_sale' => $product->days_since_sale ?? 999,
@@ -54,7 +54,7 @@ class SlowMovingStockService
             }),
             'total_slow_moving' => $products->count(),
             'total_stock_value' => (float)$products->sum(function($product) {
-                return bcmul((string)$product->stock_quantity, (string)$product->selling_price, 2);
+                return bcmul((string)$product->stock_quantity, (string)($product->default_price ?? 0), 2);
             }),
         ];
     }
@@ -76,12 +76,12 @@ class SlowMovingStockService
         return [
             'expiring_products' => $products->map(function($product) {
                 $daysToExpiry = Carbon::now()->diffInDays($product->expiry_date, false);
-                $potentialLoss = bcmul((string)$product->stock_quantity, (string)$product->cost_price, 2);
+                $potentialLoss = bcmul((string)$product->stock_quantity, (string)($product->cost ?? $product->standard_cost ?? 0), 2);
                 
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
-                    'sku' => $product->product_code,
+                    'sku' => $product->sku ?? $product->code,
                     'stock_quantity' => $product->stock_quantity,
                     'expiry_date' => $product->expiry_date,
                     'days_to_expiry' => $daysToExpiry,
@@ -92,7 +92,7 @@ class SlowMovingStockService
             }),
             'total_expiring' => $products->count(),
             'total_potential_loss' => (float)$products->sum(function($product) {
-                return bcmul((string)$product->stock_quantity, (string)$product->cost_price, 2);
+                return bcmul((string)$product->stock_quantity, (string)($product->cost ?? $product->standard_cost ?? 0), 2);
             }),
         ];
     }
