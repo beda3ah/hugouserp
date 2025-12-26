@@ -113,19 +113,30 @@
     @if($showModal)
     <div 
         class="fixed inset-0 z-modal flex items-center justify-center p-4"
-        x-init="document.body.classList.add('overflow-hidden'); $el.addEventListener('close-modal', () => document.body.classList.remove('overflow-hidden'))"
-        @keydown.escape.window="$wire.closeModal()"
+        x-data="{ 
+            modalId: '{{ $fieldId }}-modal',
+            cleanup() {
+                document.body.classList.remove('overflow-hidden');
+                document.body.style.overflow = '';
+            }
+        }"
+        x-init="
+            document.body.classList.add('overflow-hidden');
+            document.body.style.overflow = 'hidden';
+        "
+        @keydown.escape.window="$wire.closeModal(); cleanup();"
+        x-on:close-media-modal.window="cleanup()"
     >
         {{-- Backdrop --}}
         <div 
-            class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            class="absolute inset-0 bg-black/60 backdrop-blur-sm z-modal-backdrop"
             wire:click="closeModal"
         ></div>
 
         {{-- Modal Content --}}
-        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-            {{-- Header --}}
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden z-modal">
+            {{-- Header (Sticky) --}}
+            <div class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10">
                 <div>
                     <h2 class="text-xl font-bold text-gray-900 dark:text-white">{{ __('Media Library') }}</h2>
                     <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -135,6 +146,9 @@
                             {{ __('Select or upload a document') }}
                         @else
                             {{ __('Select or upload a file') }}
+                        @endif
+                        @if(!$isDirectMode && count($loadedMedia) > 0)
+                            <span class="text-xs text-gray-400 ml-2">{{ count($loadedMedia) }} {{ __('items loaded') }}</span>
                         @endif
                     </p>
                 </div>
@@ -161,15 +175,15 @@
                 </div>
             @endif
 
-            {{-- Upload Section --}}
+            {{-- Upload Section (Sticky with Header) --}}
             @if($isDirectMode || auth()->user()?->can('media.upload'))
-            <div class="px-6 pt-4">
+            <div class="flex-shrink-0 px-6 pt-4 pb-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
                 <div 
                     class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center hover:border-emerald-500 transition-colors cursor-pointer"
                     x-data="{ dragging: false }"
                     @dragover.prevent="dragging = true"
                     @dragleave.prevent="dragging = false"
-                    @drop.prevent="dragging = false"
+                    @drop.prevent="dragging = false; $refs.fileInput.files = $event.dataTransfer.files; $refs.fileInput.dispatchEvent(new Event('change'));"
                     :class="{ 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20': dragging }"
                 >
                     <input 
@@ -178,6 +192,7 @@
                         class="hidden" 
                         id="media-upload-{{ $fieldId }}"
                         accept="{{ $acceptAttribute }}"
+                        x-ref="fileInput"
                     >
                     <label for="media-upload-{{ $fieldId }}" class="cursor-pointer block">
                         <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -203,15 +218,26 @@
             </div>
             @endif
 
-            {{-- Search & Filter --}}
-            <div class="px-6 py-3 flex gap-3">
-                <div class="flex-1">
+            {{-- Search & Filter (Sticky with Header) --}}
+            <div class="flex-shrink-0 px-6 py-3 flex gap-3 bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex-1 relative">
                     <input 
                         type="text" 
                         wire:model.live.debounce.300ms="search" 
                         placeholder="{{ __('Search files...') }}"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        class="w-full px-3 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     >
+                    @if($search)
+                    <button 
+                        type="button"
+                        wire:click="$set('search', '')"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 rounded"
+                    >
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    @endif
                 </div>
                 @if($canSwitchFilter)
                 <select 
@@ -224,7 +250,10 @@
                 </select>
                 @else
                 {{-- Show disabled filter indicator for type-locked modes --}}
-                <div class="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-gray-50 dark:bg-gray-700 text-gray-500">
+                <div class="px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg text-sm bg-gray-50 dark:bg-gray-700 text-gray-500 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
                     @if($acceptMode === 'image')
                         {{ __('Images Only') }}
                     @elseif($acceptMode === 'file')
@@ -234,16 +263,24 @@
                 @endif
             </div>
 
-            {{-- Media Grid --}}
-            <div class="flex-1 overflow-y-auto px-6 pb-4">
+            {{-- Media Grid (Scrollable Area) --}}
+            <div class="flex-1 overflow-y-auto px-6 pb-4 scroll-smooth" id="media-grid-scroll-{{ $fieldId }}" x-data="{ 
+                showBackToTop: false,
+                checkScroll() {
+                    this.showBackToTop = this.$el.scrollTop > 300;
+                },
+                scrollToTop() {
+                    this.$el.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            }" @scroll.debounce.100ms="checkScroll()">
                 {{-- Loading skeleton --}}
-                <div wire:loading.delay wire:target="loadMedia, loadMore, loadExistingFiles" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                <div wire:loading.delay wire:target="loadMedia, loadMore, loadExistingFiles" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mt-4">
                     @for($i = 0; $i < 10; $i++)
                     <div class="aspect-square rounded-lg bg-gray-200 dark:bg-gray-700 animate-pulse"></div>
                     @endfor
                 </div>
 
-                <div wire:loading.remove wire:target="loadMedia, loadMore, loadExistingFiles" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                <div wire:loading.remove wire:target="loadMedia, loadMore, loadExistingFiles" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 mt-4">
                     @forelse($media as $item)
                         <button
                             type="button"
@@ -367,25 +404,53 @@
                         </button>
                     </div>
                 @endif
+                
+                {{-- Back to Top Button --}}
+                <button
+                    type="button"
+                    x-show="showBackToTop"
+                    x-transition
+                    @click="scrollToTop()"
+                    class="fixed bottom-24 right-8 p-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-lg transition-all z-20"
+                    style="display: none;"
+                >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/>
+                    </svg>
+                </button>
             </div>
 
-            {{-- Footer --}}
-            <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
-                <button 
-                    type="button"
-                    wire:click="closeModal"
-                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
-                >
-                    {{ __('Cancel') }}
-                </button>
-                <button 
-                    type="button"
-                    wire:click="confirmSelection"
-                    class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    {{ $selectedMediaId ? '' : 'disabled' }}
-                >
-                    {{ __('Select') }}
-                </button>
+            {{-- Footer (Sticky) --}}
+            <div class="flex-shrink-0 flex items-center justify-between gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 sticky bottom-0 z-10">
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                    @if($selectedMediaId || $selectedFilePath)
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            {{ __('1 item selected') }}
+                        </span>
+                    @else
+                        {{ __('No item selected') }}
+                    @endif
+                </div>
+                <div class="flex gap-3">
+                    <button 
+                        type="button"
+                        wire:click="closeModal"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                    >
+                        {{ __('Cancel') }}
+                    </button>
+                    <button 
+                        type="button"
+                        wire:click="confirmSelection"
+                        class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                        {{ ($selectedMediaId || $selectedFilePath) ? '' : 'disabled' }}
+                    >
+                        {{ __('Select') }}
+                    </button>
+                </div>
             </div>
         </div>
     </div>

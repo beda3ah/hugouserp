@@ -404,6 +404,9 @@ class MediaPicker extends Component
         $this->uploadFile = null;
         $this->loadedMedia = [];
         $this->page = 1;
+        
+        // Dispatch event to trigger Alpine.js cleanup
+        $this->dispatch('close-media-modal');
     }
 
     public function updatingSearch(): void
@@ -785,7 +788,13 @@ class MediaPicker extends Component
 
     public function confirmSelection(): void
     {
-        if ($this->selectedMediaId) {
+        if ($this->storageScope === 'direct' && $this->selectedFilePath) {
+            $this->dispatch('file-uploaded', 
+                fieldId: $this->fieldId,
+                path: $this->selectedFilePath,
+                fileInfo: $this->selectedMedia
+            );
+        } elseif ($this->selectedMediaId) {
             $this->dispatch('media-selected', 
                 fieldId: $this->fieldId,
                 mediaId: $this->selectedMediaId,
