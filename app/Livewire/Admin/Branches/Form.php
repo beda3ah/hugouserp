@@ -7,6 +7,7 @@ namespace App\Livewire\Admin\Branches;
 use App\Livewire\Concerns\HandlesErrors;
 use App\Models\Branch;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
@@ -64,7 +65,7 @@ class Form extends Component
             }
         } catch (\Illuminate\Database\QueryException | \PDOException $e) {
             // Log the error for debugging while providing fallback for user
-            \Log::warning('Currency table access failed, using default currencies', [
+            Log::warning('Currency table access failed, using default currencies', [
                 'error' => $e->getMessage(),
                 'user_id' => auth()->id(),
             ]);

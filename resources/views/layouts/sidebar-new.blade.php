@@ -481,8 +481,9 @@
         searchQuery: '',
         searchResults: [],
         showSearchResults: false,
-        // Configuration constants
-        AUTO_SCROLL_DELAY_MS: 150,  // Delay to ensure DOM is fully rendered before auto-scrolling
+        // Configuration: Delay for auto-scroll to ensure DOM is fully rendered
+        // Keep this in component data for easy adjustment during development
+        AUTO_SCROLL_DELAY_MS: 150,
         allMenuItems: @js(collect($filteredSections)->flatMap(function($section) use ($currentRoute) {
             // Define keyword mappings for bilingual search (English -> Arabic and vice versa)
             $keywordMappings = [
