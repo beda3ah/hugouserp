@@ -109,36 +109,22 @@
         @endif
     </div>
 
-    {{-- Modal --}}
+    {{-- Modal - Improved non-blocking popup --}}
     @if($showModal)
     <div 
-        class="fixed inset-0 z-modal flex items-center justify-center p-4"
+        class="fixed inset-0 pointer-events-none flex items-center justify-center p-4"
+        style="z-index: 9000;"
         role="dialog"
         aria-modal="true"
         aria-labelledby="media-picker-title-{{ $fieldId }}"
         x-data="{ 
-            modalId: '{{ $fieldId }}-modal',
-            cleanup() {
-                document.body.classList.remove('overflow-hidden');
-                document.body.style.overflow = '';
-            }
+            modalId: '{{ $fieldId }}-modal'
         }"
-        x-init="
-            document.body.classList.add('overflow-hidden');
-            document.body.style.overflow = 'hidden';
-        "
-        @keydown.escape.window="$wire.closeModal(); cleanup();"
-        x-on:close-media-modal.window="cleanup()"
+        @keydown.escape.window="$wire.closeModal();"
     >
-        {{-- Backdrop --}}
-        <div 
-            class="absolute inset-0 bg-black/60 backdrop-blur-sm z-modal-backdrop"
-            wire:click="closeModal"
-            aria-hidden="true"
-        ></div>
-
-        {{-- Modal Content --}}
-        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden z-modal">
+        {{-- Modal Content - Card Style without backdrop --}}
+        <div class="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden pointer-events-auto border-2 border-emerald-500/30"
+            style="z-index: 9001;">
             {{-- Header (Sticky) --}}
             <div class="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky top-0 z-10">
                 <div>
