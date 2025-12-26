@@ -77,33 +77,56 @@ class MediaPicker extends Component
     public array $loadedMedia = [];
     public bool $isLoadingMore = false;
 
-    // NOTE: These extension lists mirror those in MediaLibrary.php and Media model.
-    // Consider centralizing to config/media.php in future refactor.
-    private const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'ico'];
-    private const ALLOWED_DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'csv', 'ppt', 'pptx'];
-    
-    private const ALLOWED_IMAGE_MIMES = [
-        'image/jpeg',
-        'image/png',
-        'image/gif',
-        'image/webp',
-        'image/x-icon',
-        'image/vnd.microsoft.icon',
-    ];
-    
-    private const ALLOWED_DOCUMENT_MIMES = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'text/csv',
-        'text/plain',
-    ];
-
     protected $listeners = ['openMediaPicker'];
+    
+    /**
+     * Get image extensions from config or fallback to defaults
+     */
+    protected function getImageExtensions(): array
+    {
+        return config('media.image_extensions', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'ico']);
+    }
+    
+    /**
+     * Get document extensions from config or fallback to defaults  
+     */
+    protected function getDocumentExtensions(): array
+    {
+        return config('media.document_extensions', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'csv', 'txt']);
+    }
+    
+    /**
+     * Get image MIME types from config or fallback to defaults
+     */
+    protected function getImageMimeTypes(): array
+    {
+        return config('media.image_mimes', [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/x-icon',
+            'image/vnd.microsoft.icon',
+        ]);
+    }
+    
+    /**
+     * Get document MIME types from config or fallback to defaults
+     */
+    protected function getDocumentMimeTypes(): array
+    {
+        return config('media.document_mimes', [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'text/csv',
+            'text/plain',
+        ]);
+    }
 
     public function mount(
         ?int $value = null,
@@ -541,15 +564,18 @@ class MediaPicker extends Component
      */
     protected function getAllowedExtensions(): array
     {
+        $imageExtensions = $this->getImageExtensions();
+        $documentExtensions = $this->getDocumentExtensions();
+        
         // If custom allowedMimes are specified, derive extensions from them
         if (!empty($this->allowedMimes)) {
             // Return a combined list based on custom mimes
             $extensions = [];
             foreach ($this->allowedMimes as $mime) {
                 if (str_starts_with($mime, 'image/')) {
-                    $extensions = array_merge($extensions, self::ALLOWED_IMAGE_EXTENSIONS);
+                    $extensions = array_merge($extensions, $imageExtensions);
                 } else {
-                    $extensions = array_merge($extensions, self::ALLOWED_DOCUMENT_EXTENSIONS);
+                    $extensions = array_merge($extensions, $documentExtensions);
                 }
             }
             return array_unique($extensions);
@@ -557,9 +583,9 @@ class MediaPicker extends Component
         
         // Use acceptMode to determine allowed extensions
         return match ($this->acceptMode) {
-            'image' => self::ALLOWED_IMAGE_EXTENSIONS,
-            'file' => self::ALLOWED_DOCUMENT_EXTENSIONS,
-            default => array_merge(self::ALLOWED_IMAGE_EXTENSIONS, self::ALLOWED_DOCUMENT_EXTENSIONS),
+            'image' => $imageExtensions,
+            'file' => $documentExtensions,
+            default => array_merge($imageExtensions, $documentExtensions),
         };
     }
     
@@ -573,11 +599,14 @@ class MediaPicker extends Component
             return $this->allowedMimes;
         }
         
+        $imageMimes = $this->getImageMimeTypes();
+        $documentMimes = $this->getDocumentMimeTypes();
+        
         // Use acceptMode to determine allowed MIME types
         return match ($this->acceptMode) {
-            'image' => self::ALLOWED_IMAGE_MIMES,
-            'file' => self::ALLOWED_DOCUMENT_MIMES,
-            default => array_merge(self::ALLOWED_IMAGE_MIMES, self::ALLOWED_DOCUMENT_MIMES),
+            'image' => $imageMimes,
+            'file' => $documentMimes,
+            default => array_merge($imageMimes, $documentMimes),
         };
     }
     

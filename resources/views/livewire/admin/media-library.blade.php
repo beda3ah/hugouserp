@@ -23,14 +23,14 @@
              @dragleave.prevent="dragging = false"
              @drop.prevent="dragging = false"
              :class="{ 'border-emerald-500 bg-emerald-50': dragging }">
-            <input type="file" wire:model="files" multiple class="hidden" id="file-upload" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.ppt,.pptx">
+            <input type="file" wire:model="files" multiple class="hidden" id="file-upload" accept="{{ $this->getAcceptAttribute() }}">
             <label for="file-upload" class="cursor-pointer">
                 <svg class="mx-auto h-12 w-12 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
                 <p class="mt-4 text-sm text-slate-600">{{ __('Drop files here or click to upload') }}</p>
-                <p class="mt-1 text-xs text-slate-500">{{ __('Supported formats') }}: JPG, PNG, GIF, WebP, PDF, DOC, XLS, PPT, TXT, CSV</p>
-                <p class="mt-1 text-xs text-slate-500">{{ __('Maximum file size') }}: 10 {{ __('MB') }}</p>
+                <p class="mt-1 text-xs text-slate-500">{{ __('Supported formats') }}: JPG, PNG, GIF, WebP, ICO, PDF, DOC, XLS, PPT, TXT, CSV</p>
+                <p class="mt-1 text-xs text-slate-500">{{ __('Maximum file size') }}: {{ round(config('media.max_upload_size', 10240) / 1024, 1) }} {{ __('MB') }}</p>
             </label>
         </div>
         <div wire:loading wire:target="files" class="mt-4 text-center">

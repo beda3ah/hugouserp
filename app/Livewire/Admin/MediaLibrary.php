@@ -16,42 +16,6 @@ class MediaLibrary extends Component
 {
     use WithFileUploads;
 
-    private const ALLOWED_EXTENSIONS = [
-        'jpg',
-        'jpeg',
-        'png',
-        'gif',
-        'webp',
-        'ico',
-        'pdf',
-        'doc',
-        'docx',
-        'xls',
-        'xlsx',
-        'ppt',
-        'pptx',
-        'csv',
-        'txt',
-    ];
-
-    private const ALLOWED_MIME_TYPES = [
-        'image/jpeg',
-        'image/png',
-        'image/gif',
-        'image/webp',
-        'image/x-icon',
-        'image/vnd.microsoft.icon',
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-excel',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'text/csv',
-        'text/plain',
-    ];
-
     public $files = [];
     public string $search = '';
     public string $filterType = 'all'; // all, images, documents
@@ -66,6 +30,55 @@ class MediaLibrary extends Component
     public bool $isLoading = false;
 
     protected $queryString = ['search', 'filterType', 'filterOwner', 'sortOrder'];
+    
+    /**
+     * Get all allowed extensions from config
+     */
+    protected function getAllowedExtensions(): array
+    {
+        $imageExtensions = config('media.image_extensions', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'ico']);
+        $documentExtensions = config('media.document_extensions', ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'csv', 'txt']);
+        
+        return array_merge($imageExtensions, $documentExtensions);
+    }
+    
+    /**
+     * Get all allowed MIME types from config
+     */
+    protected function getAllowedMimeTypes(): array
+    {
+        $imageMimes = config('media.image_mimes', [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/x-icon',
+            'image/vnd.microsoft.icon',
+        ]);
+        
+        $documentMimes = config('media.document_mimes', [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'text/csv',
+            'text/plain',
+        ]);
+        
+        return array_merge($imageMimes, $documentMimes);
+    }
+    
+    /**
+     * Get accept attribute for file input
+     */
+    public function getAcceptAttribute(): string
+    {
+        $extensions = $this->getAllowedExtensions();
+        return implode(',', array_map(fn($ext) => '.' . $ext, $extensions));
+    }
 
     public function mount(): void
     {
@@ -202,9 +215,13 @@ class MediaLibrary extends Component
 
     public function updatedFiles(): void
     {
+        $allowedExtensions = $this->getAllowedExtensions();
+        $allowedMimeTypes = $this->getAllowedMimeTypes();
+        $maxSize = config('media.max_upload_size', 10240);
+        
         $this->validate([
-            'files.*' => 'file|max:10240|mimes:' . implode(',', self::ALLOWED_EXTENSIONS) .
-                '|mimetypes:' . implode(',', self::ALLOWED_MIME_TYPES), // 10MB max, restricted types
+            'files.*' => 'file|max:' . $maxSize . '|mimes:' . implode(',', $allowedExtensions) .
+                '|mimetypes:' . implode(',', $allowedMimeTypes),
         ]);
 
         $user = auth()->user();
@@ -214,7 +231,7 @@ class MediaLibrary extends Component
         }
 
         $optimizationService = app(ImageOptimizationService::class);
-        $disk = config('filesystems.media_disk', 'local');
+        $disk = config('media.default_disk', config('filesystems.media_disk', 'local'));
 
         foreach ($this->files as $file) {
             $this->guardAgainstHtmlPayload($file);
