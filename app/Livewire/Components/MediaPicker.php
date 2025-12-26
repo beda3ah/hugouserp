@@ -58,6 +58,8 @@ class MediaPicker extends Component
     public ?string $previewUrl = null;
     public ?string $previewName = null;
 
+    // NOTE: These extension lists mirror those in MediaLibrary.php and Media model.
+    // Consider centralizing to config/media.php in future refactor.
     private const ALLOWED_IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'ico'];
     private const ALLOWED_DOCUMENT_EXTENSIONS = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'csv'];
 
@@ -317,13 +319,16 @@ class MediaPicker extends Component
             abort(422, __('Unable to verify file content. Upload rejected.'));
         }
         
-        $contents = strtolower((string) fread($handle, 8192));
-        fclose($handle);
-        
-        $patterns = ['<script', '<iframe', '<html', '<object', '<embed', '&lt;script'];
+        try {
+            $contents = strtolower((string) fread($handle, 8192));
+            
+            $patterns = ['<script', '<iframe', '<html', '<object', '<embed', '&lt;script'];
 
-        if (collect($patterns)->contains(fn ($needle) => str_contains($contents, $needle))) {
-            abort(422, __('Uploaded file contains HTML content and was rejected.'));
+            if (collect($patterns)->contains(fn ($needle) => str_contains($contents, $needle))) {
+                abort(422, __('Uploaded file contains HTML content and was rejected.'));
+            }
+        } finally {
+            fclose($handle);
         }
     }
 
