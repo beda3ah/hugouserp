@@ -39,6 +39,10 @@ class MediaLibrary extends Component
     public $files = [];
     public string $search = '';
     public string $filterOwner = 'all'; // all, mine
+    
+    // Image preview modal
+    public bool $showPreview = false;
+    public ?array $previewImage = null;
 
     protected $queryString = ['search', 'filterOwner'];
 
@@ -95,6 +99,38 @@ class MediaLibrary extends Component
 
         $this->files = [];
         session()->flash('success', __('Files uploaded successfully'));
+    }
+
+    public function viewImage(int $id): void
+    {
+        $user = auth()->user();
+        $canBypassBranch = !$user->branch_id || $user->can('media.manage-all');
+        $media = Media::query()
+            ->when($user->branch_id && ! $canBypassBranch, fn ($q) => $q->forBranch($user->branch_id))
+            ->findOrFail($id);
+
+        if (!$media->isImage()) {
+            session()->flash('error', __('This file is not an image'));
+            return;
+        }
+
+        $this->previewImage = [
+            'id' => $media->id,
+            'name' => $media->original_name,
+            'url' => $media->url,
+            'size' => $media->human_size,
+            'width' => $media->width,
+            'height' => $media->height,
+            'uploaded_by' => $media->user->name ?? __('Unknown'),
+            'created_at' => $media->created_at?->format('Y-m-d H:i'),
+        ];
+        $this->showPreview = true;
+    }
+
+    public function closePreview(): void
+    {
+        $this->showPreview = false;
+        $this->previewImage = null;
     }
 
     public function delete(int $id): void

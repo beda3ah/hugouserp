@@ -93,10 +93,25 @@
                     
                     <!-- Actions Overlay -->
                     <div class="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                        <a href="{{ $item->url }}" target="_blank" class="p-2 bg-white rounded-full hover:bg-slate-100" title="{{ __('View') }}">
+                        <button 
+                            type="button"
+                            wire:click="viewImage({{ $item->id }})"
+                            class="p-2 bg-white rounded-full hover:bg-slate-100" 
+                            title="{{ __('View') }}"
+                        >
                             <svg class="h-5 w-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                        </button>
+                        <a 
+                            href="{{ $item->url }}" 
+                            download="{{ $item->original_name }}"
+                            class="p-2 bg-white rounded-full hover:bg-slate-100" 
+                            title="{{ __('Download') }}"
+                        >
+                            <svg class="h-5 w-5 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                             </svg>
                         </a>
                         <button 
@@ -144,6 +159,104 @@
     @if($media->hasPages())
         <div class="mt-6">
             {{ $media->links() }}
+        </div>
+    @endif
+
+    <!-- Image Preview Modal -->
+    @if($showPreview && $previewImage)
+        <div 
+            class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50"
+            wire:click="closePreview"
+            x-data="{ scale: 1 }"
+            @keydown.escape.window="$wire.closePreview()"
+        >
+            <div class="relative max-w-7xl max-h-full" @click.stop>
+                <!-- Close Button -->
+                <button 
+                    wire:click="closePreview"
+                    class="absolute -top-12 right-0 p-2 text-white hover:text-gray-300 transition"
+                    title="{{ __('Close') }}"
+                >
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+
+                <!-- Image Info Bar -->
+                <div class="absolute -top-12 left-0 flex items-center gap-4 text-white text-sm">
+                    <span class="font-medium">{{ $previewImage['name'] }}</span>
+                    <span>{{ $previewImage['size'] }}</span>
+                    @if($previewImage['width'] && $previewImage['height'])
+                        <span>{{ $previewImage['width'] }} × {{ $previewImage['height'] }}px</span>
+                    @endif
+                </div>
+
+                <!-- Image Container -->
+                <div class="relative bg-white rounded-lg overflow-hidden shadow-2xl">
+                    <img 
+                        src="{{ $previewImage['url'] }}" 
+                        alt="{{ $previewImage['name'] }}"
+                        class="max-h-[85vh] max-w-full mx-auto object-contain"
+                        :style="'transform: scale(' + scale + ')'"
+                    >
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="absolute -bottom-16 left-0 right-0 flex items-center justify-center gap-4">
+                    <button 
+                        @click="scale = Math.max(0.5, scale - 0.25)"
+                        class="p-3 bg-white rounded-full hover:bg-gray-100 shadow-lg"
+                        title="{{ __('Zoom Out') }}"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7"/>
+                        </svg>
+                    </button>
+                    <button 
+                        @click="scale = 1"
+                        class="p-3 bg-white rounded-full hover:bg-gray-100 shadow-lg"
+                        title="{{ __('Reset Zoom') }}"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                        </svg>
+                    </button>
+                    <button 
+                        @click="scale = Math.min(3, scale + 0.25)"
+                        class="p-3 bg-white rounded-full hover:bg-gray-100 shadow-lg"
+                        title="{{ __('Zoom In') }}"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
+                        </svg>
+                    </button>
+                    <a 
+                        href="{{ $previewImage['url'] }}" 
+                        download="{{ $previewImage['name'] }}"
+                        class="p-3 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 shadow-lg"
+                        title="{{ __('Download') }}"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                    </a>
+                    <button 
+                        @click="copyToClipboard('{{ route('app.media.download', $previewImage['id']) }}')"
+                        class="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 shadow-lg"
+                        title="{{ __('Copy Link') }}"
+                    >
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Image Details -->
+                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 text-white text-sm">
+                    <p class="font-medium">{{ __('Uploaded by') }}: {{ $previewImage['uploaded_by'] }}</p>
+                    <p class="text-xs opacity-90">{{ $previewImage['created_at'] }}</p>
+                </div>
+            </div>
         </div>
     @endif
 </div>
