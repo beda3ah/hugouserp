@@ -1,5 +1,5 @@
 {{-- 
-    Simple, clean modal component following the pattern from inventory categories page
+    Improved Modal Component - Non-blocking popup card style
     Usage:
     @if($showModal)
         <x-modal wire:click.self="closeModal">
@@ -11,6 +11,13 @@
             </div>
         </x-modal>
     @endif
+    
+    Features:
+    - No backdrop overlay (allows page scrolling)
+    - High z-index (9000+)
+    - Centered popup card
+    - Click outside to close still works
+    - Page remains scrollable
 --}}
 
 @props([
@@ -33,8 +40,10 @@ $maxWidthClass = match($maxWidth) {
 };
 @endphp
 
-<div {{ $attributes->merge(['class' => 'fixed inset-0 z-modal flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto']) }}>
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full {{ $maxWidthClass }} mx-auto my-auto max-h-[90vh] overflow-y-auto">
+<div {{ $attributes->merge(['class' => 'fixed inset-0 flex items-center justify-center p-4 overflow-y-auto pointer-events-none']) }} 
+     style="z-index: 9000;">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full {{ $maxWidthClass }} mx-auto my-auto max-h-[90vh] overflow-y-auto pointer-events-auto border-2 border-emerald-500/30"
+         style="z-index: 9001;">
         {{ $slot }}
     </div>
 </div>

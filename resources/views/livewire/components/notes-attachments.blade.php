@@ -144,8 +144,8 @@
     </div>
 
     @if ($showNoteModal)
-        <div class="z-modal fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm" wire:click.self="closeNoteModal">
-            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
+        <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none" style="z-index: 9000;" wire:click.self="closeNoteModal">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden pointer-events-auto border-2 border-emerald-500/30" style="z-index: 9001;">
                 <div class="px-6 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white">
                     <h3 class="text-lg font-semibold">
                         {{ $editingNoteId ? __('Edit Note') : __('Add Note') }}
@@ -180,8 +180,8 @@
     @endif
 
     @if ($showFileModal)
-        <div class="z-modal fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm" wire:click.self="closeFileModal">
-            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-hidden">
+        <div class="fixed inset-0 flex items-center justify-center p-4 pointer-events-none" style="z-index: 9000;" wire:click.self="closeFileModal">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden pointer-events-auto border-2 border-emerald-500/30" style="z-index: 9001;">
                 <div class="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
                     <h3 class="text-lg font-semibold">{{ __('Upload Files') }}</h3>
                 </div>
