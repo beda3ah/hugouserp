@@ -1,23 +1,29 @@
 <div class="container mx-auto px-4 py-6"
     x-data="{
+        validTabs: @js(array_keys($tabs)),
         init() {
             // Handle hash on initial load
             const hash = window.location.hash.slice(1);
-            if (hash && document.querySelector('[data-tab-key]')) {
+            if (hash && this.isValidTab(hash)) {
                 this.switchToTab(hash);
             }
             
             // Handle browser back/forward
             window.addEventListener('popstate', () => {
                 const hash = window.location.hash.slice(1);
-                if (hash) {
+                if (hash && this.isValidTab(hash)) {
                     this.switchToTab(hash);
                 }
             });
         },
+        isValidTab(tab) {
+            return this.validTabs.includes(tab);
+        },
         switchToTab(tab) {
             // Only switch if tab exists in the available tabs
-            @this.switchTab(tab);
+            if (this.isValidTab(tab)) {
+                @this.switchTab(tab);
+            }
         }
     }"
     x-on:tab-changed.window="

@@ -133,17 +133,19 @@ class MediaPicker extends Component
 
     public function updatedUploadFile(): void
     {
+        // Check permission first before processing the file
+        $user = auth()->user();
+        if (!$user || !$user->can('media.upload')) {
+            $this->uploadFile = null;
+            session()->flash('error', __('You do not have permission to upload files'));
+            return;
+        }
+
         $allowedExtensions = $this->getAllowedExtensions();
         
         $this->validate([
             'uploadFile' => 'file|max:' . $this->maxSize . '|mimes:' . implode(',', $allowedExtensions),
         ]);
-
-        $user = auth()->user();
-        if (!$user->can('media.upload')) {
-            session()->flash('error', __('You do not have permission to upload files'));
-            return;
-        }
 
         $optimizationService = app(ImageOptimizationService::class);
         $disk = config('filesystems.media_disk', 'local');
@@ -304,7 +306,15 @@ class MediaPicker extends Component
 
     protected function guardAgainstHtmlPayload($file): void
     {
-        $contents = strtolower((string) $file->get());
+        // Only read the first 8KB for HTML detection (efficient for large files)
+        $handle = fopen($file->getRealPath(), 'r');
+        if (!$handle) {
+            return;
+        }
+        
+        $contents = strtolower((string) fread($handle, 8192));
+        fclose($handle);
+        
         $patterns = ['<script', '<iframe', '<html', '<object', '<embed', '&lt;script'];
 
         if (collect($patterns)->contains(fn ($needle) => str_contains($contents, $needle))) {

@@ -81,9 +81,8 @@
     @if($showModal)
     <div 
         class="fixed inset-0 z-modal flex items-center justify-center p-4"
-        x-data="{ }"
-        x-init="document.body.classList.add('overflow-hidden')"
-        x-on:close-modal.window="document.body.classList.remove('overflow-hidden')"
+        x-init="document.body.classList.add('overflow-hidden'); $el.addEventListener('close-modal', () => document.body.classList.remove('overflow-hidden'))"
+        @keydown.escape.window="$wire.closeModal()"
     >
         {{-- Backdrop --}}
         <div 

@@ -603,18 +603,27 @@
                 this.scrollToActiveItem();
             });
             
+            // Store bound handlers for cleanup
+            this._turboHandler = () => this.$nextTick(() => this.scrollToActiveItem());
+            this._livewireHandler = () => this.$nextTick(() => this.scrollToActiveItem());
+            
             // Also handle Turbo/SPA navigation if Turbo is loaded
             if (typeof Turbo !== 'undefined') {
-                document.addEventListener('turbo:render', () => {
-                    this.$nextTick(() => this.scrollToActiveItem());
-                });
+                document.addEventListener('turbo:render', this._turboHandler);
             }
             
             // Handle Livewire navigation
             if (typeof Livewire !== 'undefined') {
-                document.addEventListener('livewire:navigated', () => {
-                    this.$nextTick(() => this.scrollToActiveItem());
-                });
+                document.addEventListener('livewire:navigated', this._livewireHandler);
+            }
+        },
+        destroy() {
+            // Cleanup event listeners
+            if (this._turboHandler) {
+                document.removeEventListener('turbo:render', this._turboHandler);
+            }
+            if (this._livewireHandler) {
+                document.removeEventListener('livewire:navigated', this._livewireHandler);
             }
         },
         scrollToActiveItem() {
