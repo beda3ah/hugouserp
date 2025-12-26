@@ -106,4 +106,35 @@ class ImageOptimizationServiceTest extends TestCase
         $this->assertEquals(150, $size[0]); // width
         $this->assertEquals(150, $size[1]); // height
     }
+
+    public function test_detects_correct_driver(): void
+    {
+        $driver = $this->service->getDriver();
+        
+        $this->assertContains($driver, ['imagick', 'gd']);
+        
+        // If Imagick is available, it should be preferred
+        if (extension_loaded('imagick')) {
+            $this->assertEquals('imagick', $driver);
+        } else {
+            $this->assertEquals('gd', $driver);
+        }
+    }
+
+    public function test_imagick_produces_better_compression(): void
+    {
+        // Only run this test if Imagick is available
+        if (!extension_loaded('imagick')) {
+            $this->markTestSkipped('Imagick extension not available');
+        }
+
+        $file = UploadedFile::fake()->image('test.jpg', 1000, 1000);
+        
+        $result = $this->service->optimizeUploadedFile($file, 'general', 'local');
+        
+        // Imagick should produce smaller files with better quality
+        $this->assertLessThan($result['size'], $result['optimized_size'] * 2);
+        $this->assertArrayHasKey('file_path', $result);
+        Storage::disk('local')->assertExists($result['file_path']);
+    }
 }
