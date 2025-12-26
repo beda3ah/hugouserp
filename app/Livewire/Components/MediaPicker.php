@@ -15,14 +15,18 @@ use Livewire\WithPagination;
 /**
  * Reusable Media Library Picker Component
  * 
- * Usage in Blade:
+ * Usage in Blade (listen for events in parent component):
  * <livewire:components.media-picker 
- *     wire:model="branding_logo_id"
+ *     :value="$branding_logo_id"
  *     :accept-types="['image']"
  *     :max-size="2048"
  *     :constraints="['maxWidth' => 400, 'maxHeight' => 100]"
  *     field-id="logo-picker"
  * />
+ * 
+ * Parent component should listen for events:
+ * #[On('media-selected')] public function handleMediaSelected(string $fieldId, int $mediaId, array $media)
+ * #[On('media-cleared')] public function handleMediaCleared(string $fieldId)
  */
 class MediaPicker extends Component
 {
@@ -309,7 +313,8 @@ class MediaPicker extends Component
         // Only read the first 8KB for HTML detection (efficient for large files)
         $handle = fopen($file->getRealPath(), 'r');
         if (!$handle) {
-            return;
+            // If we can't read the file, reject it for security
+            abort(422, __('Unable to verify file content. Upload rejected.'));
         }
         
         $contents = strtolower((string) fread($handle, 8192));

@@ -201,7 +201,7 @@
                                     :accept-types="['image']"
                                     :max-size="2048"
                                     field-id="branding-logo"
-                                    :key="'logo-picker-' . ($branding_logo_id ?? 'new')"
+                                    wire:key="logo-picker-{{ $branding_logo_id ?: 'empty' }}"
                                 />
                             </div>
 
@@ -213,7 +213,7 @@
                                     :accept-types="['image']"
                                     :max-size="1024"
                                     field-id="branding-favicon"
-                                    :key="'favicon-picker-' . ($branding_favicon_id ?? 'new')"
+                                    wire:key="favicon-picker-{{ $branding_favicon_id ?: 'empty' }}"
                                 />
                             </div>
                         </div>
